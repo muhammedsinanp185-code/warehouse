@@ -1,91 +1,93 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employee Dashboard</title>
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
-    <style>
-        .dashboard-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            width: 100%;
-            max-width: 400px;
-            padding: 2rem;
-        }
-        .welcome-text {
-            font-size: 1.1rem;
-            margin-bottom: 3rem;
-            opacity: 0.9;
-        }
-    </style>
-</head>
-<body>
-    <!-- Dark Mode Toggle Button -->
-    <button class="theme-toggle" id="themeToggle" aria-label="Toggle Dark Mode">
-        <svg id="themeIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-        </svg>
-    </button>
+@extends('layouts.user')
 
-    <div class="dashboard-content">
-        <div class="user-icon-circle">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-            </svg>
-        </div>
+@section('page_title', 'WORKSPACE')
 
-        <div class="auth-header" style="margin-bottom: 1rem;">
-            <h1>EMPLOYEE DASHBOARD</h1>
-        </div>
+@section('content')
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
         
-        <p class="welcome-text">Welcome back, {{ auth()->user()->name }}!</p>
+        <!-- Quick Action: Receive -->
+        <div class="stat-card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; cursor: pointer; transition: transform 0.2s; border: 1px solid rgba(16, 185, 129, 0.2);" onclick="openModal('receiveStockModal')" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981; width: 64px; height: 64px; margin-bottom: 1rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="32" height="32"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+            </div>
+            <h3 style="color: var(--text-color); font-size: 1.2rem; margin-bottom: 0.5rem;">Receive Stock</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Log incoming inventory</p>
+        </div>
 
-        <form method="POST" action="{{ route('logout') }}" style="width: 100%;">
-            @csrf
-            <button type="submit" class="auth-button">LOGOUT</button>
-        </form>
+        <!-- Quick Action: Dispatch -->
+        <div class="stat-card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; cursor: pointer; transition: transform 0.2s; border: 1px solid rgba(239, 68, 68, 0.2);" onclick="openModal('dispatchStockModal')" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; width: 64px; height: 64px; margin-bottom: 1rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="32" height="32"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg>
+            </div>
+            <h3 style="color: var(--text-color); font-size: 1.2rem; margin-bottom: 0.5rem;">Dispatch Stock</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Log outgoing inventory</p>
+        </div>
+
+        <!-- Low Stock Alerts -->
+        <div class="stat-card" style="display: block; grid-column: 1 / -1;">
+            <h2 style="color: var(--text-color); margin-bottom: 1rem; font-size: 1.1rem; display: flex; align-items: center;">
+                <span style="display: inline-block; width: 10px; height: 10px; background: #ef4444; border-radius: 50%; margin-right: 0.5rem; box-shadow: 0 0 8px #ef4444;"></span>
+                Low Stock Alerts
+            </h2>
+            <div class="table-container" style="box-shadow: none; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 0; max-height: 250px; overflow-y: auto;">
+                <table class="dashboard-table">
+                    <tbody>
+                        @forelse($lowStockProducts as $product)
+                        <tr>
+                            <td style="font-weight: 500;">{{ $product->name }} <br><span style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">{{ $product->sku }}</span></td>
+                            <td style="text-align: right; color: #ef4444; font-weight: bold;">{{ $product->quantity }} left</td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="2" style="text-align: center; color: var(--text-muted); padding: 2rem;">No low stock alerts! All items are adequately stocked.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <script>
-        // --- Dark Mode Logic ---
-        const themeToggle = document.getElementById('themeToggle');
-        const themeIcon = document.getElementById('themeIcon');
-        const htmlEl = document.documentElement;
-        
-        const moonIcon = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />';
-        const sunIcon = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />';
-
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') {
-            htmlEl.setAttribute('data-theme', 'dark');
-            themeIcon.innerHTML = sunIcon;
-        } else if (savedTheme === 'light') {
-            htmlEl.removeAttribute('data-theme');
-            themeIcon.innerHTML = moonIcon;
-        } else {
-            themeIcon.innerHTML = moonIcon;
-        }
-
-        themeToggle.addEventListener('click', () => {
-            themeIcon.classList.remove('animate-rotate');
-            
-            if (htmlEl.getAttribute('data-theme') === 'dark') {
-                htmlEl.removeAttribute('data-theme');
-                localStorage.setItem('theme', 'light');
-                themeIcon.innerHTML = moonIcon;
-            } else {
-                htmlEl.setAttribute('data-theme', 'dark');
-                localStorage.setItem('theme', 'dark');
-                themeIcon.innerHTML = sunIcon;
-            }
-            
-            setTimeout(() => {
-                themeIcon.classList.add('animate-rotate');
-            }, 10);
-        });
-    </script>
-</body>
-</html>
+    <!-- Recent Activity -->
+    <div class="stat-card" style="display: block;">
+        <h2 style="color: var(--text-color); margin-bottom: 1rem; font-size: 1.1rem;">Floor Activity Feed</h2>
+        <div class="table-container" style="box-shadow: none; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 0;">
+            <table class="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Product</th>
+                        <th style="text-align: center;">Action</th>
+                        <th style="text-align: center;">Source / Destination</th>
+                        <th style="text-align: center;">Quantity</th>
+                        <th style="text-align: right;">User</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($recentMovements as $movement)
+                    <tr>
+                        <td style="color: var(--text-muted);">{{ $movement->created_at->diffForHumans() }}</td>
+                        <td style="font-weight: 500;">{{ $movement->product->name }}</td>
+                        <td style="text-align: center;">
+                            @if($movement->type == 'in')
+                                <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border-color: rgba(16, 185, 129, 0.3);">Received</span>
+                            @else
+                                <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">Dispatched</span>
+                            @endif
+                        </td>
+                        <td style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">{{ $movement->reference_party ?: '-' }}</td>
+                        <td style="text-align: center; font-weight: 600; color: {{ $movement->type == 'in' ? '#10b981' : '#ef4444' }};">
+                            {{ $movement->type == 'in' ? '+' : '-' }}{{ $movement->quantity }}
+                        </td>
+                        <td style="text-align: right; color: var(--text-muted);">{{ $movement->user->name }}</td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">No recent activity on the floor.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+@endsection
