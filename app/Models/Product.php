@@ -14,8 +14,20 @@ class Product extends Model
         'sku', 
         'price', 
         'quantity', 
-        'min_stock_level'
+        'min_stock_level',
+        'category_id',
+        'brand_id'
     ];
+    
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    public function brand()
+    {
+        return $this->belongsTo(Brand::class);
+    }
     
     public function stockMovements()
     {

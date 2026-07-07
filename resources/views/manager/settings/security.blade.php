@@ -17,7 +17,7 @@
                 <input type="password" name="password_confirmation" class="form-input" placeholder="Confirm New Password" required style="margin: 0;">
             </div>
         </div>
-        <button type="submit" class="btn-action" style="background: rgba(255,255,255,0.1); color: var(--text-color); border: 1px solid rgba(255,255,255,0.2);">Update Password</button>
+        <button type="submit" class="btn-action" style="background: var(--glass-10); color: var(--text-color); border: 1px solid var(--glass-20);">Update Password</button>
     </form>
 </div>
 @endsection

@@ -27,11 +27,12 @@ class ProductController extends Controller
             }
         }
 
-        $products = $query->orderBy('name')->paginate(15);
-        // Pass allProducts for the master layout dropdowns
+        $products = $query->with(['category', 'brand'])->orderBy('name')->paginate(15);
         $allProducts = Product::orderBy('name')->get(); 
+        $categories = \App\Models\Category::orderBy('name')->get();
+        $brands = \App\Models\Brand::orderBy('name')->get();
         
-        return view('manager.products', compact('products', 'allProducts'));
+        return view('manager.products', compact('products', 'allProducts', 'categories', 'brands'));
     }
 
     public function store(Request $request)
@@ -42,6 +43,8 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'quantity' => 'required|integer|min:0',
             'min_stock_level' => 'required|integer|min:0',
+            'category_id' => 'nullable|exists:categories,id',
+            'brand_id' => 'nullable|exists:brands,id'
         ]);
 
         Product::create($validated);
@@ -56,6 +59,8 @@ class ProductController extends Controller
             'sku' => 'required|string|max:255|unique:products,sku,' . $product->id,
             'price' => 'required|numeric|min:0',
             'min_stock_level' => 'required|integer|min:0',
+            'category_id' => 'nullable|exists:categories,id',
+            'brand_id' => 'nullable|exists:brands,id'
         ]);
 
         $product->update($validated);

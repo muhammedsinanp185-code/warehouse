@@ -10,7 +10,7 @@
         </button>
     </div>
     
-    <div class="table-container" style="box-shadow: none; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 0;">
+    <div class="table-container" style="box-shadow: none; border: 1px solid var(--glass-bg-05); margin-bottom: 0;">
         <table class="dashboard-table">
             <thead>
                 <tr>

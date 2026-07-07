@@ -29,7 +29,7 @@
                 <span style="display: inline-block; width: 10px; height: 10px; background: #ef4444; border-radius: 50%; margin-right: 0.5rem; box-shadow: 0 0 8px #ef4444;"></span>
                 Low Stock Alerts
             </h2>
-            <div class="table-container" style="box-shadow: none; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 0; max-height: 250px; overflow-y: auto;">
+            <div class="table-container" style="box-shadow: none; border: 1px solid var(--glass-bg-05); margin-bottom: 0; max-height: 250px; overflow-y: auto;">
                 <table class="dashboard-table">
                     <tbody>
                         @forelse($lowStockProducts as $product)
@@ -51,7 +51,7 @@
     <!-- Recent Activity -->
     <div class="stat-card" style="display: block;">
         <h2 style="color: var(--text-color); margin-bottom: 1rem; font-size: 1.1rem;">Floor Activity Feed</h2>
-        <div class="table-container" style="box-shadow: none; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 0;">
+        <div class="table-container" style="box-shadow: none; border: 1px solid var(--glass-bg-05); margin-bottom: 0;">
             <table class="dashboard-table">
                 <thead>
                     <tr>

@@ -26,16 +26,23 @@
                     Dashboard
                 </a>
                 <div class="sidebar-dropdown-container">
-                    <div class="sidebar-link sidebar-dropdown-toggle {{ request()->is('manager/products*') ? 'active open' : '' }}" onclick="toggleSubmenu('productsSubmenu', this)">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" /></svg>
-                        <span style="flex: 1;">Products</span>
-                        <svg class="dropdown-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 14px; height: 14px; transition: transform 0.3s ease; {{ request()->is('manager/products*') ? 'transform: rotate(180deg);' : '' }}">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                        </svg>
+                    <div class="sidebar-link sidebar-dropdown-toggle {{ request()->is('manager/products*') ? 'active open' : '' }}" style="padding-right: 5px;">
+                        <a href="{{ route('manager.products.index') }}" style="display: flex; align-items: center; flex: 1; text-decoration: none; color: inherit;">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 24px; height: 24px; margin-right: 12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" /></svg>
+                            <span style="flex: 1;">Products</span>
+                        </a>
+                        <div onclick="toggleSubmenu('productsSubmenu', this.parentElement)" style="padding: 10px; cursor: pointer; display: flex; align-items: center; border-radius: 6px;" onmouseover="this.style.background='rgba(128,128,128,0.1)'" onmouseout="this.style.background='transparent'">
+                            <svg class="dropdown-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 14px; height: 14px; transition: transform 0.3s ease; {{ request()->is('manager/products*') && !request()->routeIs('manager.products.index') ? 'transform: rotate(180deg);' : '' }}">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                            </svg>
+                        </div>
                     </div>
-                    <div class="sidebar-submenu" id="productsSubmenu" style="display: {{ request()->is('manager/products*') || request()->is('manager/categories*') ? 'flex' : 'none' }};">
-                        <a href="#" class="submenu-link">
-                            <span class="submenu-dot"></span> Category
+                    <div class="sidebar-submenu" id="productsSubmenu" style="display: {{ request()->is('manager/products*') || request()->is('manager/categories*') || request()->is('manager/brands*') ? 'flex' : 'none' }};">
+                        <a href="{{ route('categories.index') }}" class="submenu-link {{ request()->routeIs('categories.index') ? 'active' : '' }}">
+                            <span class="submenu-dot"></span> Categories
+                        </a>
+                        <a href="{{ route('brands.index') }}" class="submenu-link {{ request()->routeIs('brands.index') ? 'active' : '' }}">
+                            <span class="submenu-dot"></span> Brands
                         </a>
                     </div>
                 </div>
@@ -151,6 +158,22 @@
                 @csrf
                 <div class="form-group"><input type="text" name="name" class="form-input" placeholder="Product Name (e.g. iPhone 15)" required></div>
                 <div class="form-group"><input type="text" name="sku" class="form-input" placeholder="SKU (e.g. PHN-IPH-15)" required></div>
+                <div class="form-group">
+                    <select name="category_id" class="form-input" style="color: black;">
+                        <option value="">Select Category (Optional)</option>
+                        @foreach(\App\Models\Category::orderBy('name')->get() as $cat)
+                            <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group">
+                    <select name="brand_id" class="form-input" style="color: black;">
+                        <option value="">Select Brand (Optional)</option>
+                        @foreach(\App\Models\Brand::orderBy('name')->get() as $brand)
+                            <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="form-group"><input type="number" step="0.01" name="price" class="form-input" placeholder="Price ($)" required></div>
                 <div class="form-group"><input type="number" name="quantity" class="form-input" placeholder="Initial Quantity" min="0" required></div>
                 <div class="form-group" style="margin-bottom: 2rem;"><input type="number" name="min_stock_level" class="form-input" placeholder="Low Stock Alert Threshold" min="0" required></div>
@@ -267,6 +290,8 @@
                 themeIcon.innerHTML = sunIcon;
             }
             
+            document.dispatchEvent(new Event('themeChanged'));
+            
             setTimeout(() => {
                 themeIcon.classList.add('animate-rotate');
             }, 10);
@@ -304,6 +329,10 @@
             }
         }
     </script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     @yield('extra_scripts')
 </body>
 </html>

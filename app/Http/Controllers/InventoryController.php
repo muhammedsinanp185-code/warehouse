@@ -9,6 +9,15 @@ use Illuminate\Support\Facades\Auth;
 
 class InventoryController extends Controller
 {
+    public function lowStock(Request $request)
+    {
+        $lowStockItems = Product::whereColumn('quantity', '<=', 'min_stock_level')
+                            ->orderBy('quantity', 'asc')
+                            ->paginate(15);
+                            
+        return view('manager.low_stock', compact('lowStockItems'));
+    }
+
     public function receive(Request $request)
     {
         $request->validate([

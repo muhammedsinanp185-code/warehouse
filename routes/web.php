@@ -20,19 +20,35 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\BrandController;
 
 // Manager Routes (Warehouse Manager)
 Route::middleware(['auth', 'role:manager'])->group(function () {
     Route::get('/manager/dashboard', [DashboardController::class, 'managerIndex'])->name('manager.dashboard');
+    Route::get('/manager/api/chart-data', [DashboardController::class, 'chartData'])->name('manager.chart.data');
     
     // Products
     Route::get('/manager/products', [ProductController::class, 'index'])->name('manager.products.index');
     Route::post('/products', [ProductController::class, 'store'])->name('products.store');
     Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+
+    // Categories
+    Route::get('/manager/categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+    Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+
+    // Brands
+    Route::get('/manager/brands', [BrandController::class, 'index'])->name('brands.index');
+    Route::post('/brands', [BrandController::class, 'store'])->name('brands.store');
+    Route::put('/brands/{brand}', [BrandController::class, 'update'])->name('brands.update');
+    Route::delete('/brands/{brand}', [BrandController::class, 'destroy'])->name('brands.destroy');
     
     // Inventory
     Route::get('/manager/inventory', [InventoryController::class, 'index'])->name('manager.inventory');
+    Route::get('/manager/low-stock', [InventoryController::class, 'lowStock'])->name('manager.low-stock');
     Route::post('/inventory/receive', [InventoryController::class, 'receive'])->name('inventory.receive');
     Route::post('/inventory/dispatch', [InventoryController::class, 'dispatch'])->name('inventory.dispatch');
     Route::delete('/inventory/{movement}', [InventoryController::class, 'destroy'])->name('inventory.destroy');
