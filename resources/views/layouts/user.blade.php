@@ -117,21 +117,30 @@
             </div>
             <form method="POST" action="{{ route('user.inventory.receive') }}">
                 @csrf
-                <div class="form-group">
-                    <select name="product_id" class="form-input" required style="background: transparent; -webkit-appearance: none; color: var(--text-color);">
-                        <option value="" disabled selected hidden>Select Product</option>
-                        @if(isset($allProducts))
-                            @foreach($allProducts as $product)
-                                <option value="{{ $product->id }}" style="color: black;">{{ $product->name }} (SKU: {{ $product->sku }})</option>
-                            @endforeach
-                        @endif
-                    </select>
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="font-size: 0.75rem; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 0.5px;">Select Product</label>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <select name="product_id" class="form-input" required style="background-color: var(--glass-bg-03); border: 1px solid var(--glass-border-20); border-radius: 8px; color: var(--text-color);">
+                            <option value="" disabled selected hidden>Select Product</option>
+                            @if(isset($allProducts))
+                                @foreach($allProducts as $product)
+                                    <option value="{{ $product->id }}">{{ $product->name }} (SKU: {{ $product->sku }})</option>
+                                @endforeach
+                            @endif
+                        </select>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <input type="number" name="quantity" class="form-input" placeholder="Quantity to Receive" min="1" required>
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="font-size: 0.75rem; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 0.5px;">Quantity to Receive</label>
+                    <div class="form-group" style="margin-bottom: 0;"><input type="number" name="quantity" class="form-input" placeholder="Quantity to Receive" min="1" required></div>
                 </div>
-                <div class="form-group" style="margin-bottom: 2rem;">
-                    <input type="text" name="reference_party" class="form-input" placeholder="From (Supplier / Sender)">
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="font-size: 0.75rem; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 0.5px;">From (Supplier / Sender)</label>
+                    <div class="form-group" style="margin-bottom: 0;"><input type="text" name="reference_party" class="form-input" placeholder="From (Supplier / Sender)"></div>
+                </div>
+                <div style="margin-bottom: 2rem;">
+                    <label style="font-size: 0.75rem; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 0.5px;">Transaction Date (Optional Backdate)</label>
+                    <div class="form-group" style="margin-bottom: 0;"><input type="datetime-local" name="transaction_date" class="form-input" title="Leave blank to use current time"></div>
                 </div>
                 <button type="submit" class="auth-button btn-receive">Receive into Inventory</button>
             </form>
@@ -149,21 +158,30 @@
             </div>
             <form method="POST" action="{{ route('user.inventory.dispatch') }}">
                 @csrf
-                <div class="form-group">
-                    <select name="product_id" class="form-input" required style="background: transparent; -webkit-appearance: none; color: var(--text-color);">
-                        <option value="" disabled selected hidden>Select Product</option>
-                        @if(isset($allProducts))
-                            @foreach($allProducts as $product)
-                                <option value="{{ $product->id }}" style="color: black;">{{ $product->name }} ({{ $product->quantity }} in stock)</option>
-                            @endforeach
-                        @endif
-                    </select>
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="font-size: 0.75rem; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 0.5px;">Select Product</label>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <select name="product_id" class="form-input" required style="background-color: var(--glass-bg-03); border: 1px solid var(--glass-border-20); border-radius: 8px; color: var(--text-color);">
+                            <option value="" disabled selected hidden>Select Product</option>
+                            @if(isset($allProducts))
+                                @foreach($allProducts as $product)
+                                    <option value="{{ $product->id }}">{{ $product->name }} ({{ $product->quantity }} in stock)</option>
+                                @endforeach
+                            @endif
+                        </select>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <input type="number" name="quantity" class="form-input" placeholder="Quantity to Dispatch" min="1" required>
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="font-size: 0.75rem; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 0.5px;">Quantity to Dispatch</label>
+                    <div class="form-group" style="margin-bottom: 0;"><input type="number" name="quantity" class="form-input" placeholder="Quantity to Dispatch" min="1" required></div>
                 </div>
-                <div class="form-group" style="margin-bottom: 2rem;">
-                    <input type="text" name="reference_party" class="form-input" placeholder="To (Client / Destination)">
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="font-size: 0.75rem; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 0.5px;">To (Client / Destination)</label>
+                    <div class="form-group" style="margin-bottom: 0;"><input type="text" name="reference_party" class="form-input" placeholder="To (Client / Destination)"></div>
+                </div>
+                <div style="margin-bottom: 2rem;">
+                    <label style="font-size: 0.75rem; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 0.5px;">Transaction Date (Optional Backdate)</label>
+                    <div class="form-group" style="margin-bottom: 0;"><input type="datetime-local" name="transaction_date" class="form-input" title="Leave blank to use current time"></div>
                 </div>
                 <button type="submit" class="auth-button btn-dispatch">Dispatch from Inventory</button>
             </form>

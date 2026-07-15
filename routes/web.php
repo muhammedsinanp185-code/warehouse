@@ -30,6 +30,8 @@ Route::middleware(['auth', 'role:manager'])->group(function () {
     
     // Products
     Route::get('/manager/products', [ProductController::class, 'index'])->name('manager.products.index');
+    Route::get('/manager/products/{product}', [ProductController::class, 'show'])->name('manager.products.show');
+    Route::get('/manager/products/{product}/history', [ProductController::class, 'history'])->name('manager.products.history');
     Route::post('/products', [ProductController::class, 'store'])->name('products.store');
     Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
@@ -46,9 +48,13 @@ Route::middleware(['auth', 'role:manager'])->group(function () {
     Route::put('/brands/{brand}', [BrandController::class, 'update'])->name('brands.update');
     Route::delete('/brands/{brand}', [BrandController::class, 'destroy'])->name('brands.destroy');
     
-    // Inventory
+    // Reports Center
+    Route::get('/manager/reports', [App\Http\Controllers\ReportController::class, 'index'])->name('manager.reports.index');
+    
+    // Individual Reports
     Route::get('/manager/inventory', [InventoryController::class, 'index'])->name('manager.inventory');
-    Route::get('/manager/low-stock', [InventoryController::class, 'lowStock'])->name('manager.low-stock');
+    Route::get('/manager/reports/valuation', [InventoryController::class, 'report'])->name('manager.inventory-report');
+    Route::get('/manager/reports/low-stock', [InventoryController::class, 'lowStock'])->name('manager.low-stock');
     Route::post('/inventory/receive', [InventoryController::class, 'receive'])->name('inventory.receive');
     Route::post('/inventory/dispatch', [InventoryController::class, 'dispatch'])->name('inventory.dispatch');
     Route::delete('/inventory/{movement}', [InventoryController::class, 'destroy'])->name('inventory.destroy');
@@ -61,6 +67,12 @@ Route::middleware(['auth', 'role:manager'])->group(function () {
     Route::get('/manager/settings/security', [SettingController::class, 'security'])->name('settings.security');
     Route::get('/manager/settings/team', [SettingController::class, 'team'])->name('settings.team');
     
+    // Notifications
+    Route::post('/manager/notifications/mark-all-read', function() {
+        auth()->user()->unreadNotifications->markAsRead();
+        return back();
+    })->name('notifications.markAllRead');
+
     Route::put('/manager/settings/profile', [SettingController::class, 'updateProfile'])->name('settings.profile.update');
     Route::put('/manager/settings/password', [SettingController::class, 'updatePassword'])->name('settings.password');
     Route::post('/manager/settings/employees', [SettingController::class, 'storeEmployee'])->name('settings.employees.store');
@@ -75,6 +87,13 @@ Route::middleware(['auth', 'role:user'])->group(function () {
         return redirect()->route('user.dashboard');
     });
     Route::get('/user/dashboard', [UserDashboardController::class, 'index'])->name('user.dashboard');
+    
+    // Shift Routes
+    Route::post('/user/shift/start', [UserDashboardController::class, 'startShift'])->name('user.shift.start');
+    Route::post('/user/shift/end', [UserDashboardController::class, 'endShift'])->name('user.shift.end');
+
+    // Inventory actions
     Route::post('/user/inventory/receive', [InventoryController::class, 'receive'])->name('user.inventory.receive');
     Route::post('/user/inventory/dispatch', [InventoryController::class, 'dispatch'])->name('user.inventory.dispatch');
+    Route::delete('/user/inventory/{movement}', [InventoryController::class, 'destroy'])->name('user.inventory.destroy');
 });

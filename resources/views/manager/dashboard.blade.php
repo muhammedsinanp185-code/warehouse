@@ -18,11 +18,13 @@
                 <!-- Stat Card 2 -->
                 <div class="stat-card">
                     <div class="stat-icon icon-green">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="28" height="28"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="28" height="28">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 8.25H9m6 3H9m3 6-3-3h1.5a3 3 0 1 0 0-6M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
                     </div>
-                    <div class="stat-details">
+                    <div class="stat-details" style="min-width: 0; flex: 1; overflow: hidden;">
                         <h4>Inventory Value</h4>
-                        <h2>${{ number_format($inventoryValue, 2) }}</h2>
+                        <h2 id="inventoryValueText" style="font-size: 1.8rem; white-space: nowrap;">₹{{ number_format($inventoryValue, 2) }}</h2>
                     </div>
                 </div>
 
@@ -60,13 +62,13 @@
                             <input type="checkbox" id="compareCheckbox" style="cursor: pointer;">
                             Compare to previous
                         </label>
-                        <select id="chartTimeRange" style="width: 130px; padding: 0.3rem 0.5rem; border-radius: 6px; background: var(--glass-bg-10); color: var(--text-color); border: 1px solid var(--glass-border-20); font-size: 0.85rem; outline: none; cursor: pointer;">
-                            <option value="day" selected style="color: black;">Today</option>
-                            <option value="week" style="color: black;">This Week</option>
-                            <option value="month" style="color: black;">This Month</option>
-                            <option value="3months" style="color: black;">3 Months</option>
-                            <option value="6months" style="color: black;">6 Months</option>
-                            <option value="custom" style="color: black;">Custom</option>
+                        <select id="chartTimeRange" class="form-input" style="width: 130px; padding: 0.3rem 1.5rem 0.3rem 0.5rem; border-radius: 6px; background-color: var(--glass-bg-10); color: var(--text-color); border: 1px solid var(--glass-border-20); font-size: 0.85rem; outline: none; cursor: pointer;">
+                            <option value="day" selected>Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                            <option value="3months">3 Months</option>
+                            <option value="6months">6 Months</option>
+                            <option value="custom">Custom</option>
                         </select>
                         <div id="customDateContainer" style="display: none; align-items: center; gap: 0.5rem;">
                             <input type="date" id="customStartDate" style="padding: 0.3rem; border-radius: 6px; background: var(--glass-bg-10); color: var(--text-color); border: 1px solid var(--glass-border-20); font-size: 0.85rem;">
@@ -79,6 +81,42 @@
                 <div style="position: relative; height: 300px; width: 100%;">
                     <canvas id="movementsChart"></canvas>
                 </div>
+            </div>
+
+            <!-- Active Shifts Table -->
+            <h3 class="dashboard-section-title">Active Team Shifts</h3>
+            <div class="table-container" style="margin-bottom: 2rem;">
+                <table class="dashboard-table">
+                    <thead>
+                        <tr>
+                            <th>Employee Name</th>
+                            <th>Role</th>
+                            <th>Clock In Time</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($activeShifts as $shift)
+                        <tr>
+                            <td style="font-weight: 500;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 5px #10b981;"></div>
+                                    {{ $shift->user->name }}
+                                </div>
+                            </td>
+                            <td style="text-transform: capitalize; color: var(--text-muted);">{{ $shift->user->role }}</td>
+                            <td>{{ $shift->started_at->format('M d, Y - g:i A') }}</td>
+                            <td style="color: var(--text-muted);">{{ $shift->started_at->diffForHumans(null, true) }}</td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                                No employees are currently clocked in.
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
 
             <!-- Recent Activity Table -->
@@ -330,6 +368,16 @@
         document.getElementById('applyCustomDateBtn').addEventListener('click', function() {
             fetchChartData();
         });
+
+        // Auto-scale inventory value text if too long
+        const invEl = document.getElementById('inventoryValueText');
+        if (invEl) {
+            let fontSize = 1.8;
+            while(invEl.scrollWidth > invEl.parentElement.clientWidth && fontSize > 0.7) {
+                fontSize -= 0.1;
+                invEl.style.fontSize = fontSize + 'rem';
+            }
+        }
 
         // Listen for theme toggle to redraw canvas lines/text
         document.addEventListener('themeChanged', function() {

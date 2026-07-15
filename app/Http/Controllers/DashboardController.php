@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\StockMovement;
+use App\Models\Shift;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -32,6 +33,9 @@ class DashboardController extends Controller
                             
         // Get all products to populate the modals dropdown
         $allProducts = Product::orderBy('name')->get();
+
+        // Get active shifts (employees currently clocked in)
+        $activeShifts = Shift::with('user')->whereNull('ended_at')->orderBy('started_at', 'desc')->get();
                             
         return view('manager.dashboard', compact(
             'totalProducts', 
@@ -40,7 +44,8 @@ class DashboardController extends Controller
             'lowStockItems',
             'todayActivity', 
             'recentMovements',
-            'allProducts'
+            'allProducts',
+            'activeShifts'
         ));
     }
     public function chartData(Request $request)

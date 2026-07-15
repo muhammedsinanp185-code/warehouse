@@ -14,7 +14,8 @@ class StockMovement extends Model
         'user_id', 
         'type', 
         'quantity',
-        'reference_party'
+        'reference_party',
+        'balance_after'
     ];
     
     public function product()

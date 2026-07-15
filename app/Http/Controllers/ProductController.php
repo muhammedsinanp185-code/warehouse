@@ -27,12 +27,30 @@ class ProductController extends Controller
             }
         }
 
-        $products = $query->with(['category', 'brand'])->orderBy('name')->paginate(15);
+        $perPage = $request->input('per_page', 15);
+        $products = $query->with(['category', 'brand'])->orderBy('name')->paginate($perPage);
         $allProducts = Product::orderBy('name')->get(); 
         $categories = \App\Models\Category::orderBy('name')->get();
         $brands = \App\Models\Brand::orderBy('name')->get();
         
         return view('manager.products', compact('products', 'allProducts', 'categories', 'brands'));
+    }
+
+    public function show(Product $product)
+    {
+        $product->load(['category', 'brand', 'stockMovements.user']);
+        
+        // Let's sort the stock movements by newest first and limit to 4
+        $movements = $product->stockMovements()->with('user')->orderBy('created_at', 'desc')->take(4)->get();
+        
+        return view('manager.products_show', compact('product', 'movements'));
+    }
+
+    public function history(Product $product)
+    {
+        $movements = $product->stockMovements()->with('user')->orderBy('created_at', 'desc')->paginate(15);
+        
+        return view('manager.products_history', compact('product', 'movements'));
     }
 
     public function store(Request $request)
@@ -43,9 +61,21 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'quantity' => 'required|integer|min:0',
             'min_stock_level' => 'required|integer|min:0',
-            'category_id' => 'nullable|exists:categories,id',
-            'brand_id' => 'nullable|exists:brands,id'
+            'category_name' => 'nullable|string|max:255',
+            'brand_name' => 'nullable|string|max:255'
         ]);
+
+        if (!empty($request->category_name)) {
+            $category = \App\Models\Category::firstOrCreate(['name' => $request->category_name]);
+            $validated['category_id'] = $category->id;
+        }
+
+        if (!empty($request->brand_name)) {
+            $brand = \App\Models\Brand::firstOrCreate(['name' => $request->brand_name]);
+            $validated['brand_id'] = $brand->id;
+        }
+        
+        unset($validated['category_name'], $validated['brand_name']);
 
         Product::create($validated);
 
@@ -59,9 +89,25 @@ class ProductController extends Controller
             'sku' => 'required|string|max:255|unique:products,sku,' . $product->id,
             'price' => 'required|numeric|min:0',
             'min_stock_level' => 'required|integer|min:0',
-            'category_id' => 'nullable|exists:categories,id',
-            'brand_id' => 'nullable|exists:brands,id'
+            'category_name' => 'nullable|string|max:255',
+            'brand_name' => 'nullable|string|max:255'
         ]);
+
+        if (!empty($request->category_name)) {
+            $category = \App\Models\Category::firstOrCreate(['name' => $request->category_name]);
+            $validated['category_id'] = $category->id;
+        } else {
+            $validated['category_id'] = null;
+        }
+
+        if (!empty($request->brand_name)) {
+            $brand = \App\Models\Brand::firstOrCreate(['name' => $request->brand_name]);
+            $validated['brand_id'] = $brand->id;
+        } else {
+            $validated['brand_id'] = null;
+        }
+        
+        unset($validated['category_name'], $validated['brand_name']);
 
         $product->update($validated);
 

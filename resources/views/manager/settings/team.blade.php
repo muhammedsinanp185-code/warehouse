@@ -68,10 +68,10 @@
                     <input type="email" name="email" class="form-input" placeholder="Email Address" required>
                 </div>
                 <div class="form-group">
-                    <select name="role" class="form-input" required style="background: transparent; -webkit-appearance: none; color: var(--text-color);">
+                    <select name="role" class="form-input" required style="background-color: var(--glass-bg-03); border: 1px solid var(--glass-border-20); border-radius: 8px; color: var(--text-color);">
                         <option value="" disabled selected hidden>Select Role</option>
-                        <option value="user" style="color: black;">User (Warehouse Employee)</option>
-                        <option value="manager" style="color: black;">Manager (Full Access)</option>
+                        <option value="manager">Manager (Full Access)</option>
+                        <option value="user">User (Limited Access)</option>
                     </select>
                 </div>
                 <div class="form-group" style="margin-bottom: 2rem;">

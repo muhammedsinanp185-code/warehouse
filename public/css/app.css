@@ -798,6 +798,32 @@ body {
 .modal-close { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0.5rem; }
 .modal-close:hover { color: var(--text-color); }
 
+/* --- Custom Select Dropdowns --- */
+select.form-input {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.2em 1.2em;
+    padding-right: 2rem !important;
+    cursor: pointer;
+}
+
+[data-theme="dark"] select.form-input {
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+}
+
+select.form-input option {
+    background-color: #ffffff;
+    color: #0f172a;
+}
+
+[data-theme="dark"] select.form-input option {
+    background-color: #1e293b;
+    color: #f8fafc;
+}
 /* --- Toast Notifications --- */
 .toast-container {
     position: fixed; top: 20px; right: 20px; z-index: 9999;

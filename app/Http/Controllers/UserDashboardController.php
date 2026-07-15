@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\StockMovement;
+use App\Models\Shift;
+use Illuminate\Support\Facades\Auth;
 
 class UserDashboardController extends Controller
 {
@@ -15,14 +17,49 @@ class UserDashboardController extends Controller
             ->orderBy('quantity', 'asc')
             ->get();
         
-        // Recent activity
-        $recentMovements = StockMovement::with(['product', 'user'])
+        // Personal recent activity (Undo allowed for these)
+        $recentMovements = StockMovement::with(['product'])
+            ->where('user_id', Auth::id())
             ->orderBy('created_at', 'desc')
             ->take(10)
             ->get();
 
         $allProducts = Product::orderBy('name')->get();
 
-        return view('user.dashboard', compact('lowStockProducts', 'recentMovements', 'allProducts'));
+        // Check if currently on shift
+        $currentShift = Auth::user()->shifts()->whereNull('ended_at')->first();
+
+        return view('user.dashboard', compact('lowStockProducts', 'recentMovements', 'allProducts', 'currentShift'));
+    }
+
+    public function startShift(Request $request)
+    {
+        $user = Auth::user();
+
+        if ($user->shifts()->whereNull('ended_at')->exists()) {
+            return back()->with('error', 'You are already on an active shift.');
+        }
+
+        $user->shifts()->create([
+            'started_at' => now(),
+        ]);
+
+        return back()->with('success', 'Shift started successfully. Have a great day!');
+    }
+
+    public function endShift(Request $request)
+    {
+        $user = Auth::user();
+        $currentShift = $user->shifts()->whereNull('ended_at')->first();
+
+        if (!$currentShift) {
+            return back()->with('error', 'You are not currently on a shift.');
+        }
+
+        $currentShift->update([
+            'ended_at' => now(),
+        ]);
+
+        return back()->with('success', 'Shift ended successfully. Great job!');
     }
 }

@@ -1,6 +1,7 @@
 @extends('layouts.manager')
 
-@section('page_title', 'LOW STOCK ITEMS')
+@section('page_title', 'LOW STOCK REPORT')
+@section('back_link', route('manager.reports.index'))
 
 @section('content')
 <div class="dashboard-card" style="padding: 2rem; background: var(--glass-bg-03); border: 1px solid var(--glass-border-10); border-radius: 12px; backdrop-filter: blur(10px);">
@@ -14,6 +15,7 @@
         </a>
     </div>
 
+    @if($lowStockItems->count() > 0)
     <div class="table-container">
         <table class="dashboard-table">
             <thead>
@@ -26,7 +28,7 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse($lowStockItems as $item)
+                @foreach($lowStockItems as $item)
                 <tr>
                     <td>
                         <strong style="font-weight: 500;">{{ $item->name }}</strong>
@@ -38,16 +40,19 @@
                         <span style="padding: 0.3rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">Critical</span>
                     </td>
                 </tr>
-                @empty
-                <tr>
-                    <td colspan="5" style="text-align: center; padding: 3rem;">
-                        <span style="color: var(--text-muted);">Great job! All your items are adequately stocked.</span>
-                    </td>
-                </tr>
-                @endforelse
+                @endforeach
             </tbody>
         </table>
     </div>
+    @else
+    <div style="text-align: center; padding: 4rem 1rem; color: var(--text-muted); background: var(--glass-bg-03); border-radius: 12px; border: 1px dashed var(--glass-border-20);">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 64px; height: 64px; margin: 0 auto 1.5rem auto; opacity: 0.8; color: #10b981;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+        </svg>
+        <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; color: var(--text-primary); font-weight: 600;">All Stock Levels Healthy</h3>
+        <p style="margin: 0; font-size: 1.1rem;">Great job! You have no items currently requiring a restock.</p>
+    </div>
+    @endif
 
     @if($lowStockItems->hasPages())
     <div style="margin-top: 1.5rem;">
