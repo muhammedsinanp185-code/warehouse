@@ -72,6 +72,11 @@ Route::middleware(['auth', 'role:manager'])->group(function () {
         auth()->user()->unreadNotifications->markAsRead();
         return back();
     })->name('notifications.markAllRead');
+    
+    Route::delete('/manager/notifications/clear-all', function() {
+        auth()->user()->notifications()->delete();
+        return back();
+    })->name('notifications.clearAll');
 
     Route::put('/manager/settings/profile', [SettingController::class, 'updateProfile'])->name('settings.profile.update');
     Route::put('/manager/settings/password', [SettingController::class, 'updatePassword'])->name('settings.password');
@@ -87,6 +92,11 @@ Route::middleware(['auth', 'role:user'])->group(function () {
         return redirect()->route('user.dashboard');
     });
     Route::get('/user/dashboard', [UserDashboardController::class, 'index'])->name('user.dashboard');
+    
+    // User Workspace Expansions
+    Route::get('/user/products', [UserDashboardController::class, 'products'])->name('user.products.index');
+    Route::get('/user/products/{product}', [UserDashboardController::class, 'productShow'])->name('user.products.show');
+    Route::get('/user/activity', [UserDashboardController::class, 'activity'])->name('user.activity');
     
     // Shift Routes
     Route::post('/user/shift/start', [UserDashboardController::class, 'startShift'])->name('user.shift.start');

@@ -81,12 +81,21 @@
                         <div class="profile-dropdown" id="notificationDropdown" style="width: 320px; max-height: 400px; overflow-y: auto;">
                             <div class="dropdown-user-info" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding: 1rem;">
                                 <div class="dropdown-name" style="font-size: 1rem;">Notifications</div>
-                                @if(auth()->check() && auth()->user()->unreadNotifications->count() > 0)
-                                    <form method="POST" action="{{ route('notifications.markAllRead') }}" style="margin: 0;">
-                                        @csrf
-                                        <button type="submit" style="background: none; border: none; color: #3b82f6; font-size: 0.8rem; cursor: pointer; padding: 0;">Mark all read</button>
-                                    </form>
-                                @endif
+                                <div style="display: flex; gap: 0.75rem; align-items: center;">
+                                    @if(auth()->check() && auth()->user()->unreadNotifications->count() > 0)
+                                        <form method="POST" action="{{ route('notifications.markAllRead') }}" style="margin: 0;">
+                                            @csrf
+                                            <button type="submit" style="background: none; border: none; color: #3b82f6; font-size: 0.8rem; cursor: pointer; padding: 0;">Mark read</button>
+                                        </form>
+                                    @endif
+                                    @if(auth()->check() && auth()->user()->notifications->count() > 0)
+                                        <form method="POST" action="{{ route('notifications.clearAll') }}" style="margin: 0;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" style="background: none; border: none; color: #ef4444; font-size: 0.8rem; cursor: pointer; padding: 0;" title="Clear all notifications">Clear all</button>
+                                        </form>
+                                    @endif
+                                </div>
                             </div>
                             
                             @if(auth()->check() && auth()->user()->notifications->count() > 0)

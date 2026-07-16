@@ -62,4 +62,40 @@ class UserDashboardController extends Controller
 
         return back()->with('success', 'Shift ended successfully. Great job!');
     }
+
+    public function products(Request $request)
+    {
+        $query = Product::with(['category', 'brand']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%");
+            });
+        }
+
+        $products = $query->orderBy('name')->paginate(15);
+        return view('user.products', compact('products'));
+    }
+
+    public function productShow(Product $product)
+    {
+        $product->load(['category', 'brand']);
+        
+        // Show up to 10 most recent movements for context
+        $movements = $product->stockMovements()->with('user')->orderBy('created_at', 'desc')->take(10)->get();
+        
+        return view('user.products_show', compact('product', 'movements'));
+    }
+
+    public function activity(Request $request)
+    {
+        $movements = StockMovement::with(['product'])
+            ->where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+            
+        return view('user.activity', compact('movements'));
+    }
 }
