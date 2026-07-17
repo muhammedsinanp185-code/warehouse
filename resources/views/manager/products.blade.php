@@ -5,25 +5,49 @@
 @section('content')
             <div class="filters-bar" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; align-items: center; justify-content: flex-end; flex-wrap: wrap;">
                 
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <form action="{{ route('manager.products.index') }}" method="GET" id="searchForm" style="margin: 0; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                     <div style="position: relative; display: flex; align-items: center; border: 1px solid var(--glass-border-20); border-radius: 8px; background-color: var(--glass-bg-03);">
-                        <input type="text" id="searchInput" placeholder="Search SKU, Name, Category..." class="form-input" style="width: 250px; margin: 0; padding: 0.6rem 2rem; font-size: 0.9rem; background: transparent; border: none;">
-                        <button type="button" onclick="clearSearch()" id="clearSearchBtn" style="position: absolute; right: 8px; background: none; border: none; color: var(--text-muted); cursor: pointer; display: none;">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
+                        <input type="text" name="search" id="searchInput" placeholder="Search SKU, Name..." value="{{ request('search') }}" class="form-input" style="width: 250px; margin: 0; padding: 0.6rem 0.6rem 0.6rem 2.2rem; font-size: 0.9rem; background: transparent; border: none;">
+                        <svg style="position: absolute; left: 10px; color: var(--text-muted); width: 18px; height: 18px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        @if(request('search'))
+                            <button type="button" onclick="window.location='{{ route('manager.products.index') }}'" style="position: absolute; right: 8px; background: none; border: none; color: var(--text-muted); cursor: pointer;">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        @endif
                     </div>
-                </div>
-            </div>
-            
-            <div id="activeFilterAlert" style="display: none; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; align-items: center; justify-content: space-between;">
-                <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-color);">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="18" height="18" style="color: #3b82f6;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" /></svg>
-                    <span>Showing filtered results for: <strong id="activeFilterText"></strong></span>
-                </div>
-                <button type="button" onclick="clearSearch()" style="background: #3b82f6; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; gap: 0.3rem;">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" /></svg>
-                    Back to All Products
-                </button>
+                    
+                    <select name="category" class="form-input" style="margin: 0; padding: 0.6rem; width: 140px; background-color: var(--glass-bg-03); border: 1px solid var(--glass-border-20); border-radius: 8px; color: var(--text-color); font-size: 0.9rem;" onchange="this.form.submit()">
+                        <option value="">All Categories</option>
+                        @foreach($categories as $cat)
+                            <option value="{{ $cat->name }}" {{ request('category') == $cat->name ? 'selected' : '' }}>{{ $cat->name }}</option>
+                        @endforeach
+                    </select>
+
+                    <select name="brand" class="form-input" style="margin: 0; padding: 0.6rem; width: 140px; background-color: var(--glass-bg-03); border: 1px solid var(--glass-border-20); border-radius: 8px; color: var(--text-color); font-size: 0.9rem;" onchange="this.form.submit()">
+                        <option value="">All Brands</option>
+                        @foreach($brands as $b)
+                            <option value="{{ $b->name }}" {{ request('brand') == $b->name ? 'selected' : '' }}>{{ $b->name }}</option>
+                        @endforeach
+                    </select>
+                    
+                    <select name="status" class="form-input" style="margin: 0; padding: 0.6rem; width: 140px; background-color: var(--glass-bg-03); border: 1px solid var(--glass-border-20); border-radius: 8px; color: var(--text-color); font-size: 0.9rem;" onchange="this.form.submit()">
+                        <option value="">All Statuses</option>
+                        <option value="in_stock" {{ request('status') == 'in_stock' ? 'selected' : '' }}>In Stock</option>
+                        <option value="low_stock" {{ request('status') == 'low_stock' ? 'selected' : '' }}>Low Stock</option>
+                        <option value="out_of_stock" {{ request('status') == 'out_of_stock' ? 'selected' : '' }}>Out of Stock</option>
+                    </select>
+
+                    <select name="sort" class="form-input" style="margin: 0; padding: 0.6rem; width: 160px; background-color: var(--glass-bg-03); border: 1px solid var(--glass-border-20); border-radius: 8px; color: var(--text-color); font-size: 0.9rem;" onchange="this.form.submit()">
+                        <option value="name_asc" {{ request('sort') == 'name_asc' ? 'selected' : '' }}>Name: A-Z</option>
+                        <option value="name_desc" {{ request('sort') == 'name_desc' ? 'selected' : '' }}>Name: Z-A</option>
+                        <option value="price_asc" {{ request('sort') == 'price_asc' ? 'selected' : '' }}>Price: Low to High</option>
+                        <option value="price_desc" {{ request('sort') == 'price_desc' ? 'selected' : '' }}>Price: High to Low</option>
+                        <option value="qty_desc" {{ request('sort') == 'qty_desc' ? 'selected' : '' }}>Quantity: High to Low</option>
+                        <option value="qty_asc" {{ request('sort') == 'qty_asc' ? 'selected' : '' }}>Quantity: Low to High</option>
+                    </select>
+                </form>
             </div>
 
             <div class="table-container">
@@ -49,14 +73,14 @@
                             </td>
                             <td style="text-align: center;">
                                 @if($product->category)
-                                    <a href="javascript:void(0)" onclick="setSearch('{{ $product->category->name }}')" style="color: #3b82f6; text-decoration: none; font-size: 0.85rem;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ $product->category->name }}</a>
+                                    <a href="{{ route('manager.products.index', ['category' => $product->category->name]) }}" style="color: #3b82f6; text-decoration: none; font-size: 0.85rem;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ $product->category->name }}</a>
                                 @else
                                     <span style="color: var(--text-muted);">-</span>
                                 @endif
                             </td>
                             <td style="text-align: center;">
                                 @if($product->brand)
-                                    <a href="javascript:void(0)" onclick="setSearch('{{ $product->brand->name }}')" style="color: #3b82f6; text-decoration: none; font-size: 0.85rem;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ $product->brand->name }}</a>
+                                    <a href="{{ route('manager.products.index', ['brand' => $product->brand->name]) }}" style="color: #3b82f6; text-decoration: none; font-size: 0.85rem;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ $product->brand->name }}</a>
                                 @else
                                     <span style="color: var(--text-muted);">-</span>
                                 @endif

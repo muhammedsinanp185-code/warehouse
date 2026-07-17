@@ -67,6 +67,7 @@ class UserDashboardController extends Controller
     {
         $query = Product::with(['category', 'brand']);
 
+        // 1. Search
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -75,8 +76,56 @@ class UserDashboardController extends Controller
             });
         }
 
-        $products = $query->orderBy('name')->paginate(15);
-        return view('user.products', compact('products'));
+        // 2. Category Filter
+        if ($request->filled('category')) {
+            $query->whereHas('category', function($q) use ($request) {
+                $q->where('name', $request->category);
+            });
+        }
+
+        // 3. Brand Filter
+        if ($request->filled('brand')) {
+            $query->whereHas('brand', function($q) use ($request) {
+                $q->where('name', $request->brand);
+            });
+        }
+
+        // 4. Status Filter
+        if ($request->filled('status')) {
+            if ($request->status == 'in_stock') {
+                $query->whereColumn('quantity', '>', 'min_stock_level');
+            } elseif ($request->status == 'low_stock') {
+                $query->whereColumn('quantity', '<=', 'min_stock_level')->where('quantity', '>', 0);
+            } elseif ($request->status == 'out_of_stock') {
+                $query->where('quantity', 0);
+            }
+        }
+
+        // 5. Sorting
+        $sort = $request->query('sort', 'name_asc');
+        switch ($sort) {
+            case 'name_desc':
+                $query->orderBy('name', 'desc');
+                break;
+            case 'qty_desc':
+                $query->orderBy('quantity', 'desc');
+                break;
+            case 'qty_asc':
+                $query->orderBy('quantity', 'asc');
+                break;
+            case 'name_asc':
+            default:
+                $query->orderBy('name', 'asc');
+                break;
+        }
+
+        $perPage = $request->input('per_page', 15);
+        $products = $query->paginate($perPage)->withQueryString();
+        
+        $categories = \App\Models\Category::orderBy('name')->get();
+        $brands = \App\Models\Brand::orderBy('name')->get();
+        
+        return view('user.products', compact('products', 'categories', 'brands'));
     }
 
     public function productShow(Product $product)
@@ -91,10 +140,65 @@ class UserDashboardController extends Controller
 
     public function activity(Request $request)
     {
-        $movements = StockMovement::with(['product'])
-            ->where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
+        $query = StockMovement::with(['product'])
+            ->where('user_id', Auth::id());
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->whereHas('product', function($q2) use ($search) {
+                    $q2->where('name', 'like', "%{$search}%")
+                       ->orWhere('sku', 'like', "%{$search}%");
+                })
+                ->orWhere('reference_party', 'like', "%{$search}%");
+            });
+        }
+
+        // Type Filter
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        // Date Range Filter
+        if ($request->filled('date_range')) {
+            switch ($request->date_range) {
+                case 'today':
+                    $query->whereDate('created_at', \Carbon\Carbon::today());
+                    break;
+                case '7days':
+                    $query->where('created_at', '>=', \Carbon\Carbon::now()->subDays(7));
+                    break;
+                case '30days':
+                    $query->where('created_at', '>=', \Carbon\Carbon::now()->subDays(30));
+                    break;
+                case 'custom':
+                    if ($request->filled('exact_date')) {
+                        $query->whereDate('created_at', $request->exact_date);
+                    }
+                    break;
+            }
+        }
+
+        // Sorting
+        $sort = $request->query('sort', 'date_desc');
+        switch ($sort) {
+            case 'date_asc':
+                $query->oldest();
+                break;
+            case 'qty_desc':
+                $query->orderBy('quantity', 'desc');
+                break;
+            case 'qty_asc':
+                $query->orderBy('quantity', 'asc');
+                break;
+            case 'date_desc':
+            default:
+                $query->latest();
+                break;
+        }
+
+        $movements = $query->paginate(15)->withQueryString();
             
         return view('user.activity', compact('movements'));
     }

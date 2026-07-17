@@ -33,4 +33,16 @@ class Product extends Model
     {
         return $this->hasMany(StockMovement::class);
     }
+    
+    public function purchaseOrderItems()
+    {
+        return $this->hasMany(PurchaseOrderItem::class);
+    }
+
+    public function hasPendingOrders()
+    {
+        return $this->purchaseOrderItems()->whereHas('purchaseOrder', function($q) {
+            $q->where('status', 'pending');
+        })->exists();
+    }
 }

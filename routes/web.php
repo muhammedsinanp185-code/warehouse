@@ -53,10 +53,18 @@ Route::middleware(['auth', 'role:manager'])->group(function () {
     
     // Individual Reports
     Route::get('/manager/inventory', [InventoryController::class, 'index'])->name('manager.inventory');
+    Route::get('/manager/inventory/received', [InventoryController::class, 'receivedHistory'])->name('manager.inventory.received');
+    Route::get('/manager/inventory/dispatched', [InventoryController::class, 'dispatchedHistory'])->name('manager.inventory.dispatched');
     Route::get('/manager/reports/valuation', [InventoryController::class, 'report'])->name('manager.inventory-report');
     Route::get('/manager/reports/low-stock', [InventoryController::class, 'lowStock'])->name('manager.low-stock');
     Route::post('/inventory/receive', [InventoryController::class, 'receive'])->name('inventory.receive');
     Route::post('/inventory/dispatch', [InventoryController::class, 'dispatch'])->name('inventory.dispatch');
+
+    // Purchase Orders
+    Route::get('/manager/purchase-orders', [App\Http\Controllers\PurchaseOrderController::class, 'index'])->name('manager.purchase-orders.index');
+    Route::post('/manager/purchase-orders/bulk-store', [App\Http\Controllers\PurchaseOrderController::class, 'bulkStore'])->name('manager.purchase-orders.bulk-store');
+    Route::get('/manager/purchase-orders/{id}', [App\Http\Controllers\PurchaseOrderController::class, 'show'])->name('manager.purchase-orders.show');
+    Route::post('/manager/purchase-orders/{id}/receive', [App\Http\Controllers\PurchaseOrderController::class, 'receive'])->name('manager.purchase-orders.receive');
     Route::delete('/inventory/{movement}', [InventoryController::class, 'destroy'])->name('inventory.destroy');
 
     // Settings & User Management

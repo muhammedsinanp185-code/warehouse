@@ -12,11 +12,47 @@ class InventoryController extends Controller
 {
     public function lowStock(Request $request)
     {
-        $lowStockItems = Product::whereColumn('quantity', '<=', 'min_stock_level')
-                            ->orderBy('quantity', 'asc')
-                            ->paginate(15);
+        $query = Product::whereColumn('quantity', '<=', 'min_stock_level')
+                    ->with(['category', 'brand', 'purchaseOrderItems.purchaseOrder']);
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%");
+            });
+        }
+
+        // Category Filter
+        if ($request->filled('category')) {
+            $query->whereHas('category', function($q) use ($request) {
+                $q->where('name', $request->category);
+            });
+        }
+
+        // Sorting
+        $sort = $request->query('sort', 'qty_asc');
+        switch ($sort) {
+            case 'name_desc':
+                $query->orderBy('name', 'desc');
+                break;
+            case 'name_asc':
+                $query->orderBy('name', 'asc');
+                break;
+            case 'qty_desc':
+                $query->orderBy('quantity', 'desc');
+                break;
+            case 'qty_asc':
+            default:
+                $query->orderBy('quantity', 'asc');
+                break;
+        }
+
+        $lowStockItems = $query->paginate(15)->withQueryString();
+        $categories = \App\Models\Category::orderBy('name')->get();
                             
-        return view('manager.low_stock', compact('lowStockItems'));
+        return view('manager.low_stock', compact('lowStockItems', 'categories'));
     }
 
     public function report(Request $request)
@@ -120,6 +156,8 @@ class InventoryController extends Controller
             return back()->with('error', "Cannot dispatch {$request->quantity} units. Only {$product->quantity} in stock.");
         }
 
+        $wasHealthy = $product->quantity > $product->min_stock_level;
+
         $product->decrement('quantity', $request->quantity);
 
         $movement = new StockMovement([
@@ -136,6 +174,12 @@ class InventoryController extends Controller
             $movement->updated_at = $request->transaction_date;
         }
         $movement->save();
+
+        // Check if it just dropped below min stock level
+        if ($wasHealthy && $product->quantity <= $product->min_stock_level) {
+            $managers = \App\Models\User::where('role', 'manager')->get();
+            \Illuminate\Support\Facades\Notification::send($managers, new \App\Notifications\LowStockAlert([$product]));
+        }
 
         return back()->with('success', "Dispatched {$request->quantity} units of {$product->name}.");
     }
@@ -206,6 +250,77 @@ class InventoryController extends Controller
         $totalMovements = StockMovement::count();
 
         return view('manager.inventory', compact('movements', 'allProducts', 'totalReceived', 'totalDispatched', 'totalMovements'));
+    }
+
+    private function getHistoryQuery(Request $request, $type)
+    {
+        $query = StockMovement::with(['product', 'user'])->where('type', $type);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->whereHas('product', function($q2) use ($search) {
+                    $q2->where('name', 'like', "%{$search}%")
+                       ->orWhere('sku', 'like', "%{$search}%");
+                })
+                ->orWhereHas('user', function($q2) use ($search) {
+                    $q2->where('name', 'like', "%{$search}%");
+                })
+                ->orWhere('reference_party', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('date_range')) {
+            switch ($request->date_range) {
+                case 'today':
+                    $query->whereDate('created_at', \Carbon\Carbon::today());
+                    break;
+                case '7days':
+                    $query->where('created_at', '>=', \Carbon\Carbon::now()->subDays(7));
+                    break;
+                case '30days':
+                    $query->where('created_at', '>=', \Carbon\Carbon::now()->subDays(30));
+                    break;
+                case 'custom':
+                    if ($request->filled('exact_date')) {
+                        $query->whereDate('created_at', $request->exact_date);
+                    }
+                    break;
+            }
+        }
+
+        $sort = $request->query('sort', 'date_desc');
+        switch ($sort) {
+            case 'date_asc':
+                $query->oldest();
+                break;
+            case 'qty_desc':
+                $query->orderBy('quantity', 'desc');
+                break;
+            case 'qty_asc':
+                $query->orderBy('quantity', 'asc');
+                break;
+            case 'date_desc':
+            default:
+                $query->latest();
+                break;
+        }
+
+        return $query->paginate(15)->withQueryString();
+    }
+
+    public function receivedHistory(Request $request)
+    {
+        $movements = $this->getHistoryQuery($request, 'in');
+        $title = 'RECEIVED HISTORY';
+        return view('manager.inventory_history', compact('movements', 'title'));
+    }
+
+    public function dispatchedHistory(Request $request)
+    {
+        $movements = $this->getHistoryQuery($request, 'out');
+        $title = 'DISPATCHED HISTORY';
+        return view('manager.inventory_history', compact('movements', 'title'));
     }
 
     public function destroy(StockMovement $movement)
