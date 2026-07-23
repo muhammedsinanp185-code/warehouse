@@ -10,6 +10,10 @@ class PurchaseOrderItem extends Model
         'purchase_order_id',
         'product_id',
         'quantity',
+        'unit_price',
+        'discount',
+        'tax',
+        'total'
     ];
 
     public function purchaseOrder()

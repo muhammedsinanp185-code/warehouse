@@ -141,6 +141,47 @@ class InventoryController extends Controller
         return back()->with('success', "Received {$request->quantity} units of {$product->name}.");
     }
 
+    public function adjust(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'type' => 'required|in:in,out',
+            'quantity' => 'required|integer|min:1',
+            'reason' => 'required|string|max:255',
+        ]);
+
+        $product = Product::findOrFail($request->product_id);
+
+        if ($request->type === 'out' && $product->quantity < $request->quantity) {
+            return back()->with('error', "Cannot adjust. Only {$product->quantity} in stock.");
+        }
+
+        if ($request->type === 'in') {
+            $product->increment('quantity', $request->quantity);
+        } else {
+            $wasHealthy = $product->quantity > $product->min_stock_level;
+            $product->decrement('quantity', $request->quantity);
+            
+            // Check if it dropped below min stock level
+            if ($wasHealthy && $product->quantity <= $product->min_stock_level) {
+                $managers = \App\Models\User::where('role', 'manager')->get();
+                \Illuminate\Support\Facades\Notification::send($managers, new \App\Notifications\LowStockAlert([$product]));
+            }
+        }
+
+        $movement = new StockMovement([
+            'product_id' => $product->id,
+            'user_id' => Auth::id(),
+            'type' => $request->type,
+            'quantity' => $request->quantity,
+            'reason' => $request->reason,
+            'balance_after' => $product->quantity,
+        ]);
+        $movement->save();
+
+        return back()->with('success', "Stock adjusted successfully for {$product->name}.");
+    }
+
     public function dispatch(Request $request)
     {
         $request->validate([

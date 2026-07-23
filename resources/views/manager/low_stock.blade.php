@@ -109,17 +109,23 @@
                         <th style="text-align: center;">Min Stock Level</th>
                         <th style="text-align: center;">Order Qty</th>
                         <th style="text-align: center;">Status</th>
+                        <th style="text-align: center;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($lowStockItems as $item)
-                    @php $hasPending = $item->hasPendingOrders(); @endphp
+                    @php 
+                        $hasPending = $item->hasPendingOrders(); 
+                        $recommendedQty = max($item->min_stock_level - $item->quantity, 0) + 50;
+                    @endphp
                     <tr>
                         <td style="text-align: center;">
                             <input type="checkbox" name="product_ids[]" value="{{ $item->id }}" class="item-checkbox" onclick="updateSelectedCount()" {{ $hasPending ? 'disabled' : '' }} style="width: 16px; height: 16px; cursor: pointer;">
                         </td>
                         <td>
-                            <a href="{{ route('manager.products.show', $item->id) }}" style="font-weight: 500; color: var(--text-primary); text-decoration: none;" onmouseover="this.style.color='#3b82f6'" onmouseout="this.style.color='var(--text-primary)'">{{ $item->name }}</a>
+                            <a href="{{ route('manager.purchase-orders.create', ['product_id' => $item->id, 'qty' => $recommendedQty]) }}" style="font-weight: 600; color: #3b82f6; text-decoration: none;" title="Click to create purchase order for this item">
+                                {{ $item->name }}
+                            </a>
                             @if($hasPending)
                             <span style="margin-left: 0.5rem; padding: 0.2rem 0.5rem; background: rgba(59, 130, 246, 0.2); color: #3b82f6; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;">Ordered</span>
                             @endif
@@ -128,10 +134,15 @@
                         <td style="text-align: center;"><span style="color: #ef4444; font-weight: 600;">{{ $item->quantity }}</span></td>
                         <td style="text-align: center;">{{ $item->min_stock_level }}</td>
                         <td style="text-align: center;">
-                            <input type="number" name="quantities[{{ $item->id }}]" value="{{ max($item->min_stock_level - $item->quantity, 0) + 50 }}" min="1" style="width: 70px; padding: 0.3rem; border: 1px solid var(--glass-border-20); border-radius: 4px; background: var(--glass-bg-03); color: var(--text-primary); text-align: center;" {{ $hasPending ? 'disabled' : '' }}>
+                            <input type="number" name="quantities[{{ $item->id }}]" value="{{ $recommendedQty }}" min="1" style="width: 70px; padding: 0.3rem; border: 1px solid var(--glass-border-20); border-radius: 4px; background: var(--glass-bg-03); color: var(--text-primary); text-align: center;" {{ $hasPending ? 'disabled' : '' }}>
                         </td>
                         <td style="text-align: center;">
                             <span style="padding: 0.3rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">Critical</span>
+                        </td>
+                        <td style="text-align: center;">
+                            <a href="{{ route('manager.purchase-orders.create', ['product_id' => $item->id, 'qty' => $recommendedQty]) }}" class="btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; border-radius: 6px; text-decoration: none; display: inline-block;">
+                                Create PO
+                            </a>
                         </td>
                     </tr>
                     @endforeach

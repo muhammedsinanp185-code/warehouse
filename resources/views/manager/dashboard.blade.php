@@ -3,391 +3,491 @@
 @section('page_title', 'DASHBOARD')
 
 @section('content')
-            <div class="stat-grid">
-                <!-- Stat Card 1 -->
-                <div class="stat-card" onclick="window.location.href='{{ route('manager.products.index') }}'" style="cursor: pointer;">
-                    <div class="stat-icon icon-blue">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="28" height="28"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" /></svg>
-                    </div>
-                    <div class="stat-details">
-                        <h4>Total Products</h4>
-                        <h2>{{ number_format($totalProducts) }}</h2>
-                    </div>
-                </div>
+<style>
+    .zoho-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .zoho-card {
+        background: var(--glass-bg-05);
+        border: 1px solid var(--glass-border-10);
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+    }
 
-                <!-- Stat Card 2 -->
-                <div class="stat-card">
-                    <div class="stat-icon icon-green">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="28" height="28">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 8.25H9m6 3H9m3 6-3-3h1.5a3 3 0 1 0 0-6M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                        </svg>
-                    </div>
-                    <div class="stat-details" style="min-width: 0; flex: 1; overflow: hidden;">
-                        <h4>Inventory Value</h4>
-                        <h2 id="inventoryValueText" style="font-size: 1.8rem; white-space: nowrap;">₹{{ number_format($inventoryValue, 2) }}</h2>
-                    </div>
-                </div>
+    .zoho-card-header {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-color);
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--glass-border-10);
+    }
 
-                <!-- Stat Card 3 -->
-                <div class="stat-card" onclick="window.location.href='{{ route('manager.low-stock') }}'" style="cursor: pointer;" title="Click to view low stock items">
-                    <div class="stat-icon icon-red">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="28" height="28"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3Z" /></svg>
-                    </div>
-                    <div class="stat-details">
-                        <h4>Low Stock Items</h4>
-                        <h2>{{ number_format($lowStockCount) }}</h2>
-                    </div>
-                </div>
+    .activity-boxes {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+    }
 
-                <!-- Stat Card 4 -->
-                <div class="stat-card">
-                    <div class="stat-icon icon-purple">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="28" height="28"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg>
-                    </div>
-                    <div class="stat-details">
-                        <h4>Today's Activity</h4>
-                        <h2>{{ number_format($todayActivity) }}</h2>
-                    </div>
+    .activity-box {
+        text-align: center;
+        padding: 1rem;
+        background: var(--glass-bg-03);
+        border: 1px solid var(--glass-border-10);
+        border-radius: 8px;
+        transition: transform 0.2s, background 0.2s;
+        text-decoration: none;
+        display: block;
+        cursor: pointer;
+    }
+    .activity-box:hover {
+        background: var(--glass-bg-10);
+        transform: translateY(-2px);
+    }
+
+    .activity-box h2 {
+        font-size: 2rem;
+        font-weight: 300;
+        color: #3b82f6;
+        margin: 0 0 0.5rem 0;
+    }
+    .activity-box .label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px dashed var(--glass-border-20);
+    }
+    .summary-row:last-child {
+        border-bottom: none;
+    }
+    .summary-label {
+        font-size: 0.9rem;
+        color: var(--text-color);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .summary-value {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--glass-border-10);
+    }
+    .detail-item:last-child {
+        border-bottom: none;
+    }
+
+    .po-qty {
+        font-size: 3rem;
+        font-weight: 300;
+        color: #3b82f6;
+        text-align: center;
+        margin-top: 1rem;
+    }
+    
+    .product-img {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 8px;
+        background: var(--glass-bg-10);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+
+<!-- Row 1: Sales Activity (Full Width) -->
+<div style="display: grid; grid-template-columns: 1fr; margin-bottom: 1.5rem;">
+    <div class="zoho-card">
+        <div class="zoho-card-header">Sales Activity</div>
+        <div class="activity-boxes">
+            <a href="{{ route('manager.sales_orders.index') }}" class="activity-box">
+                <h2>{{ $toBePacked }}</h2>
+                <div class="label">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                    TO BE PACKED
                 </div>
+            </a>
+            <a href="{{ route('manager.shipments.index') }}" class="activity-box">
+                <h2 style="color: #ef4444;">{{ $toBeShipped }}</h2>
+                <div class="label">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" /></svg>
+                    TO BE SHIPPED
+                </div>
+            </a>
+            <a href="{{ route('manager.shipments.index') }}" class="activity-box">
+                <h2 style="color: #10b981;">{{ $toBeDelivered }}</h2>
+                <div class="label">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" /></svg>
+                    TO BE DELIVERED
+                </div>
+            </a>
+            <a href="{{ route('manager.sales_orders.index') }}" class="activity-box">
+                <h2>{{ $toBeInvoiced }}</h2>
+                <div class="label">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 14px; height: 14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                    TO BE INVOICED
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Row 2: Inventory Summary & Product Details -->
+<div class="zoho-grid">
+    <!-- Inventory Summary -->
+    <div class="zoho-card">
+        <div class="zoho-card-header">Inventory Summary</div>
+        <a href="{{ route('manager.products.index') }}" class="summary-row" style="text-decoration: none; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--glass-bg-05)'" onmouseout="this.style.background='transparent'">
+            <span class="summary-label">Quantity In Hand</span>
+            <span class="summary-value">{{ number_format($quantityInHand) }}</span>
+        </a>
+        <a href="{{ route('manager.purchase-orders.index') }}" class="summary-row" style="text-decoration: none; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--glass-bg-05)'" onmouseout="this.style.background='transparent'">
+            <span class="summary-label">Quantity To Be Received</span>
+            <span class="summary-value">{{ number_format($quantityToBeReceived) }}</span>
+        </a>
+    </div>
+
+    <!-- Product Details -->
+    <div class="zoho-card">
+        <div class="zoho-card-header">Product Details</div>
+        <div class="details-grid">
+            <div>
+                <a href="{{ route('manager.low-stock') }}" class="detail-item" style="text-decoration: none; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--glass-bg-05)'" onmouseout="this.style.background='transparent'">
+                    <span style="color: #ef4444;">Low Stock Items</span>
+                    <span style="color: #ef4444; font-weight: bold;">{{ $lowStockCount }}</span>
+                </a>
+                <a href="{{ route('categories.index') }}" class="detail-item" style="text-decoration: none; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--glass-bg-05)'" onmouseout="this.style.background='transparent'">
+                    <span style="color: var(--text-muted);">All Item Group</span>
+                    <span style="font-weight: bold;">0</span>
+                </a>
+                <a href="{{ route('manager.products.index') }}" class="detail-item" style="text-decoration: none; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--glass-bg-05)'" onmouseout="this.style.background='transparent'">
+                    <span style="color: var(--text-muted);">All Items</span>
+                    <span style="font-weight: bold;">{{ $totalProducts }}</span>
+                </a>
+                <a href="{{ route('manager.products.index') }}" class="detail-item" style="text-decoration: none; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--glass-bg-05)'" onmouseout="this.style.background='transparent'">
+                    <span style="color: #ef4444;">Unconfirmed Items ⓘ</span>
+                    <span style="color: #ef4444; font-weight: bold;">{{ $unconfirmedItems }}</span>
+                </a>
             </div>
+            <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--glass-bg-03); border-radius: 8px;">
+                <div style="font-size: 2.5rem; font-weight: 300; color: #10b981;">{{ $totalProducts > 0 ? round((($totalProducts - $lowStockCount) / $totalProducts) * 100) : 0 }}%</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Active Items</div>
+            </div>
+        </div>
+    </div>
+</div>
 
+<!-- Row 3: Stock Movements (Chart) & Top Selling Items -->
+<div class="zoho-grid" style="grid-template-columns: 2fr 1fr;">
+    <!-- Stock Movements Chart -->
+    <div class="zoho-card">
+        <div class="zoho-card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Stock Movements Over Time</span>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <select id="chartMetric" onchange="loadChartData()" style="background: var(--glass-bg-10); border: 1px solid var(--glass-border-20); color: var(--text-color); border-radius: 6px; padding: 0.3rem 0.6rem; font-size: 0.8rem; outline: none; font-weight: 500;">
+                    <option value="qty">Units (Quantity)</option>
+                    <option value="amount">Dollar Value ($)</option>
+                </select>
+                <select id="chartRange" onchange="loadChartData()" style="background: var(--glass-bg-10); border: 1px solid var(--glass-border-20); color: var(--text-color); border-radius: 6px; padding: 0.3rem 0.6rem; font-size: 0.8rem; outline: none; font-weight: 500;">
+                    <option value="day">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                    <option value="6months">Last 6 Months</option>
+                </select>
+            </div>
+        </div>
+        <div style="position: relative; height: 250px; width: 100%;">
+            <canvas id="movementsChart"></canvas>
+        </div>
+    </div>
 
+    <!-- Top Selling Items -->
+    <div class="zoho-card">
+        <div class="zoho-card-header" style="display: flex; justify-content: space-between;">
+            Top Selling Items
+            <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted); cursor: pointer;">This Month ▼</span>
+        </div>
+        <div style="display: flex; justify-content: space-around; align-items: center; height: 100%;">
+            @forelse($topSelling as $item)
+            <div style="text-align: center;">
+                <div class="product-img" style="margin: 0 auto 0.5rem auto;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 30px; height: 30px; color: var(--text-muted);"><path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" /></svg>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ $item->name }}</div>
+                <div style="font-size: 1.25rem; font-weight: 600;">{{ $item->out_count }} <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted);">pcs</span></div>
+            </div>
+            @empty
+            <div style="color: var(--text-muted); font-size: 0.9rem;">No sales data available yet.</div>
+            @endforelse
+        </div>
+    </div>
+</div>
 
-            <!-- Graph Card -->
-            <div class="dashboard-card" style="margin-bottom: 2rem; background: var(--glass-bg-03); border: 1px solid var(--glass-border-10); border-radius: 12px; padding: 1.5rem; backdrop-filter: blur(10px);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <h3 class="dashboard-section-title" style="margin-bottom: 0;">Stock Movement Trends</h3>
-                    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-color); cursor: pointer;">
-                            <input type="checkbox" id="compareCheckbox" style="cursor: pointer;">
-                            Compare to previous
-                        </label>
-                        <select id="chartTimeRange" class="form-input" style="width: 130px; padding: 0.3rem 1.5rem 0.3rem 0.5rem; border-radius: 6px; background-color: var(--glass-bg-10); color: var(--text-color); border: 1px solid var(--glass-border-20); font-size: 0.85rem; outline: none; cursor: pointer;">
-                            <option value="day" selected>Today</option>
-                            <option value="week">This Week</option>
-                            <option value="month">This Month</option>
-                            <option value="3months">3 Months</option>
-                            <option value="6months">6 Months</option>
-                            <option value="custom">Custom</option>
-                        </select>
-                        <div id="customDateContainer" style="display: none; align-items: center; gap: 0.5rem;">
-                            <input type="date" id="customStartDate" style="padding: 0.3rem; border-radius: 6px; background: var(--glass-bg-10); color: var(--text-color); border: 1px solid var(--glass-border-20); font-size: 0.85rem;">
-                            <span style="color: var(--text-muted); font-size: 0.85rem;">to</span>
-                            <input type="date" id="customEndDate" style="padding: 0.3rem; border-radius: 6px; background: var(--glass-bg-10); color: var(--text-color); border: 1px solid var(--glass-border-20); font-size: 0.85rem;">
-                            <button id="applyCustomDateBtn" style="padding: 0.3rem 0.8rem; background: var(--btn-bg); color: #fff; border: none; border-radius: 6px; font-size: 0.85rem; cursor: pointer;">Apply</button>
-                        </div>
+<!-- Row 4: Purchase Order & Sales Order Pipelines -->
+<div class="zoho-grid">
+    <!-- Purchase Order -->
+    <div class="zoho-card">
+        <div class="zoho-card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <a href="{{ route('manager.purchase-orders.index') }}" style="text-decoration: none; color: inherit;">Purchase Order</a>
+            <form method="GET" action="{{ route('manager.dashboard') }}" style="margin: 0;">
+                <!-- Preserve existing query parameters -->
+                @if(request('range')) <input type="hidden" name="range" value="{{ request('range') }}"> @endif
+                @if(request('compare')) <input type="hidden" name="compare" value="{{ request('compare') }}"> @endif
+                
+                <select name="po_range" onchange="this.form.submit()" style="background: var(--glass-bg-10); border: 1px solid var(--glass-border-20); color: var(--text-color); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.8rem; outline: none;">
+                    <option value="day" {{ $poRange == 'day' ? 'selected' : '' }}>Today</option>
+                    <option value="week" {{ $poRange == 'week' ? 'selected' : '' }}>This Week</option>
+                    <option value="month" {{ $poRange == 'month' ? 'selected' : '' }}>This Month</option>
+                    <option value="year" {{ $poRange == 'year' ? 'selected' : '' }}>This Year</option>
+                </select>
+            </form>
+        </div>
+        <a href="{{ route('manager.purchase-orders.index') }}" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-decoration: none; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            <div style="font-size: 1rem; color: var(--text-muted);">Amount Ordered ($)</div>
+            <div class="po-qty">{{ number_format($poAmountOrdered, 2) }}</div>
+        </a>
+    </div>
+
+    <!-- Sales Order Pipeline -->
+    <div class="zoho-card">
+        <div class="zoho-card-header">Sales Order Pipeline</div>
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--glass-border-10);">
+                    <th style="padding: 0.75rem 0; font-size: 0.85rem; color: var(--text-muted); font-weight: normal;">Channel</th>
+                    <th style="padding: 0.75rem 0; font-size: 0.85rem; color: var(--text-muted); font-weight: normal; text-align: center;">Draft</th>
+                    <th style="padding: 0.75rem 0; font-size: 0.85rem; color: var(--text-muted); font-weight: normal; text-align: center;">Confirmed</th>
+                    <th style="padding: 0.75rem 0; font-size: 0.85rem; color: var(--text-muted); font-weight: normal; text-align: center;">Packed</th>
+                    <th style="padding: 0.75rem 0; font-size: 0.85rem; color: var(--text-muted); font-weight: normal; text-align: center;">Shipped</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding: 1rem 0; font-size: 0.9rem; color: var(--text-primary);">Direct sales</td>
+                    <td style="padding: 1rem 0; font-size: 0.9rem; text-align: center;"><a href="{{ route('manager.sales_orders.index') }}" style="color: #3b82f6; text-decoration: none; font-weight: 600;">{{ $salesOrdersTable ? $salesOrdersTable->draft : 0 }}</a></td>
+                    <td style="padding: 1rem 0; font-size: 0.9rem; text-align: center;"><a href="{{ route('manager.sales_orders.index') }}" style="color: #3b82f6; text-decoration: none; font-weight: 600;">{{ $salesOrdersTable ? $salesOrdersTable->confirmed : 0 }}</a></td>
+                    <td style="padding: 1rem 0; font-size: 0.9rem; text-align: center;"><a href="{{ route('manager.shipments.index') }}" style="color: #3b82f6; text-decoration: none; font-weight: 600;">{{ $salesOrdersTable ? $salesOrdersTable->packed : 0 }}</a></td>
+                    <td style="padding: 1rem 0; font-size: 0.9rem; text-align: center;"><a href="{{ route('manager.shipments.index') }}" style="color: #3b82f6; text-decoration: none; font-weight: 600;">{{ $salesOrdersTable ? $salesOrdersTable->shipped : 0 }}</a></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Row 5: Detailed Metrics -->
+<div class="zoho-grid" style="grid-template-columns: 2fr 1fr;">
+    <!-- Recent Activity Table -->
+    <div class="zoho-card">
+        <div class="zoho-card-header" style="display: flex; justify-content: space-between;">
+            Recent Stock Movements
+            <a href="{{ route('manager.inventory') }}" style="font-size: 0.8rem; color: #3b82f6; text-decoration: none;">View All →</a>
+        </div>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--glass-border-10);">
+                        <th style="padding: 0.75rem 1rem 0.75rem 0; font-size: 0.85rem; color: var(--text-muted); font-weight: normal;">Item</th>
+                        <th style="padding: 0.75rem 1rem; font-size: 0.85rem; color: var(--text-muted); font-weight: normal;">Type</th>
+                        <th style="padding: 0.75rem 1rem; font-size: 0.85rem; color: var(--text-muted); font-weight: normal; text-align: right;">Qty</th>
+                        <th style="padding: 0.75rem 0 0.75rem 1rem; font-size: 0.85rem; color: var(--text-muted); font-weight: normal;">Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($recentMovements as $movement)
+                    <tr style="border-bottom: 1px solid var(--glass-border-05);">
+                        <td style="padding: 0.75rem 1rem 0.75rem 0; font-size: 0.9rem; font-weight: 500;">
+                            {{ $movement->product->name ?? 'Unknown' }}
+                            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">{{ $movement->reference }}</div>
+                        </td>
+                        <td style="padding: 0.75rem 1rem;">
+                            @if($movement->type === 'in')
+                                <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">IN</span>
+                            @elseif($movement->type === 'out')
+                                <span style="background: rgba(239, 68, 68, 0.15); color: #ef4444; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">OUT</span>
+                            @else
+                                <span style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">ADJUST</span>
+                            @endif
+                        </td>
+                        <td style="padding: 0.75rem 1rem; text-align: right; font-weight: 600; color: var(--text-primary);">{{ $movement->quantity }}</td>
+                        <td style="padding: 0.75rem 0 0.75rem 1rem; font-size: 0.85rem; color: var(--text-muted);">{{ $movement->created_at->diffForHumans() }}</td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 1rem; color: var(--text-muted); font-size: 0.9rem;">No recent movements.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Critical Alerts -->
+    <div class="zoho-card">
+        <div class="zoho-card-header">Critical Stock Alerts</div>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            @forelse($lowStockItems->take(4) as $item)
+                @php $reorderQty = max($item->min_stock_level - $item->quantity, 0) + 50; @endphp
+                <a href="{{ route('manager.purchase-orders.create', ['product_id' => $item->id, 'qty' => $reorderQty]) }}" style="text-decoration: none; display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: rgba(239, 68, 68, 0.05); border-left: 3px solid #ef4444; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.12)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.05)'" title="Click to order restock for {{ $item->name }}">
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary);">{{ $item->name }}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Min Level: {{ $item->min_stock_level }}</div>
                     </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 1.2rem; font-weight: bold; color: #ef4444;">{{ $item->quantity }}</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">In Stock</div>
+                    </div>
+                </a>
+            @empty
+                <div style="text-align: center; padding: 2rem 0; color: #10b981;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 48px; height: 48px; margin: 0 auto 0.5rem auto; opacity: 0.5;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                    <div>All stock levels healthy!</div>
                 </div>
-                <div style="position: relative; height: 300px; width: 100%;">
-                    <canvas id="movementsChart"></canvas>
-                </div>
-            </div>
+            @endforelse
+        </div>
+    </div>
+</div>
 
-            <!-- Active Shifts Table -->
-            <h3 class="dashboard-section-title">Active Team Shifts</h3>
-            <div class="table-container" style="margin-bottom: 2rem;">
-                <table class="dashboard-table">
-                    <thead>
-                        <tr>
-                            <th>Employee Name</th>
-                            <th>Role</th>
-                            <th>Clock In Time</th>
-                            <th>Duration</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($activeShifts as $shift)
-                        <tr>
-                            <td style="font-weight: 500;">
-                                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <div style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 5px #10b981;"></div>
-                                    {{ $shift->user->name }}
-                                </div>
-                            </td>
-                            <td style="text-transform: capitalize; color: var(--text-muted);">{{ $shift->user->role }}</td>
-                            <td>{{ $shift->started_at->format('M d, Y - g:i A') }}</td>
-                            <td style="color: var(--text-muted);">{{ $shift->started_at->diffForHumans(null, true) }}</td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-                                No employees are currently clocked in.
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Recent Activity Table -->
-            <h3 class="dashboard-section-title">Recent Stock Movements</h3>
-            <div class="table-container">
-                <table class="dashboard-table">
-                    <thead>
-                        <tr>
-                            <th>Item Name</th>
-                            <th>Action</th>
-                            <th>Quantity</th>
-                            <th>User</th>
-                            <th>Time</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($recentMovements as $movement)
-                        <tr>
-                            <td>{{ $movement->product->name }}</td>
-                            <td>
-                                @if($movement->type == 'in')
-                                    <span class="badge badge-in">Stock In</span>
-                                @else
-                                    <span class="badge badge-out">Stock Out</span>
-                                @endif
-                            </td>
-                            <td>
-                                {{ $movement->type == 'in' ? '+' : '-' }} {{ $movement->quantity }}
-                            </td>
-                            <td>{{ $movement->user->name }}</td>
-                            <td>{{ $movement->created_at->diffForHumans() }}</td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-                                No recent stock movements found. Start adding inventory!
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-@endsection
-
-@section('extra_modals')
-    <!-- The Receive and Dispatch modals are handled in the master layout since they are used everywhere -->
-@endsection
-
-@section('extra_scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const ctx = document.getElementById('movementsChart').getContext('2d');
-        let movementsChart = null;
+    let movementsChart = null;
 
-        const timeRangeSelect = document.getElementById('chartTimeRange');
+    function loadChartData() {
+        const range = document.getElementById('chartRange').value;
+        const metric = document.getElementById('chartMetric') ? document.getElementById('chartMetric').value : 'qty';
 
-        // Create gradient for Stock In
-        const gradientIn = ctx.createLinearGradient(0, 0, 0, 300);
-        gradientIn.addColorStop(0, 'rgba(16, 185, 129, 0.4)'); // Green
-        gradientIn.addColorStop(1, 'rgba(16, 185, 129, 0)');
-
-        // Create gradient for Stock Out
-        const gradientOut = ctx.createLinearGradient(0, 0, 0, 300);
-        gradientOut.addColorStop(0, 'rgba(239, 68, 68, 0.4)'); // Red
-        gradientOut.addColorStop(1, 'rgba(239, 68, 68, 0)');
-
-        let currentChartData = null;
-
-        function fetchChartData() {
-            const range = timeRangeSelect.value;
-            const compare = document.getElementById('compareCheckbox').checked ? 1 : 0;
-            let url = `/manager/api/chart-data?range=${range}&compare=${compare}`;
-
-            if (range === 'custom') {
-                const start = document.getElementById('customStartDate').value;
-                const end = document.getElementById('customEndDate').value;
-                if (!start || !end) return;
-                url += `&start=${start}&end=${end}`;
-            }
-
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    currentChartData = data;
-                    renderChart(data);
-                })
-                .catch(error => console.error('Error fetching chart data:', error));
-        }
-
-        function renderChart(data) {
-            if (movementsChart) {
-                movementsChart.destroy();
-            }
-
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            
-            // Hardcode exactly what color Canvas needs to draw for each mode (CSS vars break canvas rendering sometimes)
-            const textColor = isDark ? '#94a3b8' : '#64748b'; 
-            const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
-            const tooltipBg = isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)';
-            const tooltipBorder = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-
-            Chart.defaults.color = textColor;
-            Chart.defaults.font.family = "'Inter', sans-serif";
-
-            let datasets = [
-                {
-                    label: 'Stock Received',
-                    data: data.received,
-                    exactTimes: data.received_exact,
-                    borderColor: '#10b981',
-                    backgroundColor: gradientIn,
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true,
-                    pointBackgroundColor: '#10b981',
-                    pointBorderColor: '#fff',
-                    pointRadius: 2,
-                    pointHoverRadius: 4
-                },
-                {
-                    label: 'Stock Dispatched',
-                    data: data.dispatched,
-                    exactTimes: data.dispatched_exact,
-                    borderColor: '#ef4444',
-                    backgroundColor: gradientOut,
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true,
-                    pointBackgroundColor: '#ef4444',
-                    pointBorderColor: '#fff',
-                    pointRadius: 2,
-                    pointHoverRadius: 4
+        fetch(`/manager/api/chart-data?range=${range}`)
+            .then(res => res.json())
+            .then(data => {
+                const ctx = document.getElementById('movementsChart');
+                if (!ctx) return;
+                
+                if (movementsChart) {
+                    movementsChart.destroy();
                 }
-            ];
 
-            if (data.compare_received) {
-                datasets.push({
-                    label: 'Previous Received',
-                    data: data.compare_received,
-                    exactTimes: null,
-                    borderColor: 'rgba(16, 185, 129, 0.4)',
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    tension: 0.4,
-                    fill: false,
-                    pointRadius: 0,
-                    pointHoverRadius: 0
-                });
-                datasets.push({
-                    label: 'Previous Dispatched',
-                    data: data.compare_dispatched,
-                    exactTimes: null,
-                    borderColor: 'rgba(239, 68, 68, 0.4)',
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    tension: 0.4,
-                    fill: false,
-                    pointRadius: 0,
-                    pointHoverRadius: 0
-                });
-            }
+                const isAmount = (metric === 'amount');
+                const receivedDataset = isAmount ? data.received_amount : data.received;
+                const dispatchedDataset = isAmount ? data.dispatched_amount : data.dispatched;
 
-            movementsChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.labels,
-                    datasets: datasets
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
+                movementsChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [
+                            {
+                                label: isAmount ? 'Received Value ($)' : 'Stock In (Units)',
+                                data: receivedDataset,
+                                borderColor: 'rgba(16, 185, 129, 1)',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                tension: 0.4,
+                                fill: true,
+                                pointRadius: 3,
+                                pointBackgroundColor: 'rgba(16, 185, 129, 1)'
+                            },
+                            {
+                                label: isAmount ? 'Dispatched Value ($)' : 'Stock Out (Units)',
+                                data: dispatchedDataset,
+                                borderColor: 'rgba(239, 68, 68, 1)',
+                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                tension: 0.4,
+                                fill: true,
+                                pointRadius: 3,
+                                pointBackgroundColor: 'rgba(239, 68, 68, 1)'
+                            }
+                        ]
                     },
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            align: 'end',
-                            labels: {
-                                usePointStyle: true,
-                                boxWidth: 6,
-                                boxHeight: 6
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            intersect: false,
+                            mode: 'index',
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(255,255,255,0.05)' },
+                                ticks: { 
+                                    color: 'rgba(255,255,255,0.6)',
+                                    callback: function(value) {
+                                        return isAmount ? '$' + value.toLocaleString() : value;
+                                    }
+                                }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: 'rgba(255,255,255,0.6)' }
                             }
                         },
-                        tooltip: {
-                            backgroundColor: tooltipBg,
-                            titleColor: textColor,
-                            bodyColor: textColor,
-                            borderColor: tooltipBorder,
-                            borderWidth: 1,
-                            padding: 10,
-                            displayColors: true,
-                            callbacks: {
-                                afterLabel: function(context) {
-                                    let exact = context.dataset.exactTimes;
-                                    if (exact && exact[context.dataIndex]) {
-                                        return exact[context.dataIndex];
+                        plugins: {
+                            legend: {
+                                labels: { 
+                                    color: 'rgba(255,255,255,0.7)',
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                    boxWidth: 6,
+                                    boxHeight: 6
+                                }
+                            },
+                            tooltip: {
+                                usePointStyle: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        const index = context.dataIndex;
+                                        const datasetIndex = context.datasetIndex;
+                                        if (datasetIndex === 0) {
+                                            const qty = data.received[index] || 0;
+                                            const amt = (data.received_amount[index] || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                            return ` Stock In: ${qty} units ($${amt})`;
+                                        } else {
+                                            const qty = data.dispatched[index] || 0;
+                                            const amt = (data.dispatched_amount[index] || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                            return ` Stock Out: ${qty} units ($${amt})`;
+                                        }
                                     }
-                                    return null;
                                 }
                             }
                         }
-                    },
-                    scales: {
-                        x: {
-                            grid: {
-                                color: gridColor,
-                                drawBorder: false
-                            },
-                            ticks: { color: textColor }
-                        },
-                        y: {
-                            grid: {
-                                color: gridColor,
-                                drawBorder: false
-                            },
-                            beginAtZero: true,
-                            ticks: { 
-                                color: textColor,
-                                precision: 0 
-                            }
-                        }
                     }
-                }
+                });
             });
-        }
+    }
 
-        // Event listener for dropdown change
-        timeRangeSelect.addEventListener('change', function() {
-            if (this.value === 'custom') {
-                document.getElementById('customDateContainer').style.display = 'flex';
-            } else {
-                document.getElementById('customDateContainer').style.display = 'none';
-                fetchChartData();
-            }
-        });
-
-        document.getElementById('compareCheckbox').addEventListener('change', function() {
-            // Only fetch if it's not custom, or if custom has valid dates
-            if (timeRangeSelect.value !== 'custom' || (document.getElementById('customStartDate').value && document.getElementById('customEndDate').value)) {
-                fetchChartData();
-            }
-        });
-
-        document.getElementById('applyCustomDateBtn').addEventListener('click', function() {
-            fetchChartData();
-        });
-
-        // Auto-scale inventory value text if too long
-        const invEl = document.getElementById('inventoryValueText');
-        if (invEl) {
-            let fontSize = 1.8;
-            while(invEl.scrollWidth > invEl.parentElement.clientWidth && fontSize > 0.7) {
-                fontSize -= 0.1;
-                invEl.style.fontSize = fontSize + 'rem';
-            }
-        }
-
-        // Listen for theme toggle to redraw canvas lines/text
-        document.addEventListener('themeChanged', function() {
-            if (currentChartData) {
-                renderChart(currentChartData);
-            }
-        });
-
-        // Initial fetch
-        fetchChartData();
-    });
+    document.addEventListener('DOMContentLoaded', loadChartData);
 </script>
+
 @endsection

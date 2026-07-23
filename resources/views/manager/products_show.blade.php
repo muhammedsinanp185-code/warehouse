@@ -27,6 +27,14 @@
             @if($product->quantity <= $product->min_stock_level)
                 <div style="color: #ef4444; font-size: 0.75rem; margin-top: 0.5rem; font-weight: 600; background: rgba(239,68,68,0.1); padding: 0.2rem 0.5rem; border-radius: 4px; display: inline-block;">LOW STOCK ALERT</div>
             @endif
+            <div style="margin-top: 1rem;">
+                <button type="button" onclick="document.getElementById('adjustModal').style.display='block'" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; transition: all 0.2s;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 16px; height: 16px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
+                    </svg>
+                    Adjust Stock
+                </button>
+            </div>
         </div>
     </div>
 
@@ -106,6 +114,16 @@
                                     DISPATCHED
                                 </span>
                             @endif
+                            
+                            @if($movement->reason)
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem; font-style: italic;">
+                                    Reason: {{ $movement->reason }}
+                                </div>
+                            @elseif($movement->reference_party)
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem; font-style: italic;">
+                                    Ref: {{ $movement->reference_party }}
+                                </div>
+                            @endif
                         </td>
                         <td style="padding: 1rem 1rem; text-align: right; font-weight: 700; font-family: monospace; font-size: 1.15rem; color: {{ $movement->type == 'in' ? '#10b981' : '#ef4444' }};">
                             {{ $movement->type == 'in' ? '+' : '-' }}{{ number_format($movement->quantity) }}
@@ -137,5 +155,45 @@
         @endif
     </div>
 
+</div>
+
+<!-- Adjust Stock Modal -->
+<div id="adjustModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 50; align-items: center; justify-content: center;">
+    <div style="background: var(--bg-color); border: 1px solid var(--glass-border-10); border-radius: 16px; padding: 2rem; width: 100%; max-width: 500px; margin: 10vh auto; position: relative;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0; font-size: 1.25rem; color: var(--text-primary); font-weight: 600;">Adjust Stock: {{ $product->name }}</h3>
+            <button type="button" onclick="document.getElementById('adjustModal').style.display='none'" style="background: none; border: none; color: var(--text-muted); cursor: pointer;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 24px; height: 24px;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+
+        <form action="{{ route('inventory.adjust') }}" method="POST">
+            @csrf
+            <input type="hidden" name="product_id" value="{{ $product->id }}">
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Adjustment Type</label>
+                <select name="type" required class="form-input" style="width: 100%; padding: 0.75rem; background: var(--glass-bg-05); border: 1px solid var(--glass-border-20); border-radius: 8px; color: var(--text-primary);">
+                    <option value="out">Remove Stock (Loss/Damage/Correction)</option>
+                    <option value="in">Add Stock (Found/Correction)</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Quantity to Adjust</label>
+                <input type="number" name="quantity" required min="1" class="form-input" style="width: 100%; padding: 0.75rem; background: var(--glass-bg-05); border: 1px solid var(--glass-border-20); border-radius: 8px; color: var(--text-primary);">
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem;">Reason</label>
+                <input type="text" name="reason" required placeholder="e.g. Damaged in transit, Cycle count correction..." class="form-input" style="width: 100%; padding: 0.75rem; background: var(--glass-bg-05); border: 1px solid var(--glass-border-20); border-radius: 8px; color: var(--text-primary);">
+            </div>
+
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button type="button" onclick="document.getElementById('adjustModal').style.display='none'" class="btn" style="background: transparent; border: 1px solid var(--glass-border-20); color: var(--text-primary);">Cancel</button>
+                <button type="submit" class="btn" style="background: #3b82f6; border: none; color: white;">Save Adjustment</button>
+            </div>
+        </form>
+    </div>
 </div>
 @endsection

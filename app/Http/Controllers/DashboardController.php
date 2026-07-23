@@ -13,39 +13,77 @@ class DashboardController extends Controller
     public function managerIndex()
     {
         $totalProducts = Product::count();
+        $inventoryValue = Product::selectRaw('SUM(quantity * price) as total')->value('total') ?? 0;
         
-        // Calculate total value: sum of (quantity * price) for all products
-        $inventoryValue = Product::selectRaw('SUM(quantity * price) as total')->value('total');
-        $inventoryValue = $inventoryValue ? $inventoryValue : 0;
-        
-        // Get products where quantity is less than or equal to their min_stock_level
-        $lowStockItems = Product::whereColumn('quantity', '<=', 'min_stock_level')->orderBy('quantity')->get();
+        $lowStockItems = Product::whereColumn('quantity', '<=', 'min_stock_level')->get();
         $lowStockCount = $lowStockItems->count();
         
-        // Count today's stock movements
-        $todayActivity = StockMovement::whereDate('created_at', Carbon::today())->count();
+        // --- ZOHO STYLE DATA ---
         
-        // Get the latest 5 movements with the related product and user
-        $recentMovements = StockMovement::with(['product', 'user'])
+        // Sales Activity
+        // To Be Packed = Confirmed Sales Orders
+        $toBePacked = \App\Models\SalesOrder::where('status', 'confirmed')->count();
+        // To Be Shipped = Packed Shipments
+        $toBeShipped = \App\Models\Shipment::where('status', 'packed')->count();
+        // To Be Delivered = Shipped Shipments
+        $toBeDelivered = \App\Models\Shipment::where('status', 'shipped')->count();
+        // To Be Invoiced = Delivered Sales Orders (Mock logic)
+        $toBeInvoiced = \App\Models\SalesOrder::where('status', 'delivered')->count();
+
+        // Inventory Summary
+        $quantityInHand = Product::sum('quantity') ?? 0;
+        // Quantity to be received = Sum of quantities in Pending Purchase Orders
+        $quantityToBeReceived = \App\Models\PurchaseOrder::where('status', 'pending')
+                                ->join('purchase_order_items', 'purchase_orders.id', '=', 'purchase_order_items.purchase_order_id')
+                                ->sum('purchase_order_items.quantity') ?? 0;
+
+        // Purchase Order stats
+        $poRange = request()->query('po_range', 'month');
+        $poQuery = \App\Models\PurchaseOrder::query();
+        $now = Carbon::now();
+        if ($poRange === 'day') {
+            $poQuery->whereDate('created_at', $now->toDateString());
+        } elseif ($poRange === 'week') {
+            $poQuery->whereBetween('created_at', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()]);
+        } elseif ($poRange === 'month') {
+            $poQuery->whereMonth('created_at', $now->month)->whereYear('created_at', $now->year);
+        } elseif ($poRange === 'year') {
+            $poQuery->whereYear('created_at', $now->year);
+        }
+        $poAmountOrdered = $poQuery->sum('total_amount') ?? 0;
+
+        // Top Selling Items (Mocked by highest out movements)
+        $topSelling = Product::withCount(['stockMovements as out_count' => function ($query) {
+            $query->where('type', 'out');
+        }])->orderByDesc('out_count')->take(2)->get();
+        
+        // Active items vs Unconfirmed
+        // In our DB, we don't have "unconfirmed" status for products, so we fetch actual total and assume 0 or handle logic if needed.
+        $activeItems = $totalProducts;
+        $unconfirmedItems = 0; 
+        
+        $salesOrdersTable = (object)[
+            'draft' => \App\Models\SalesOrder::where('status', 'draft')->count(),
+            'confirmed' => \App\Models\SalesOrder::where('status', 'confirmed')->count(),
+            'packed' => \App\Models\Shipment::where('status', 'packed')->count(),
+            'shipped' => \App\Models\Shipment::where('status', 'shipped')->count()
+        ];
+
+        // Active shifts for the sidebar/footer if needed
+        $activeShifts = Shift::with('user')->whereNull('ended_at')->orderBy('started_at', 'desc')->get();
+        
+        $recentMovements = StockMovement::with(['product', 'user', 'document'])
                             ->latest()
                             ->limit(5)
                             ->get();
                             
-        // Get all products to populate the modals dropdown
-        $allProducts = Product::orderBy('name')->get();
-
-        // Get active shifts (employees currently clocked in)
-        $activeShifts = Shift::with('user')->whereNull('ended_at')->orderBy('started_at', 'desc')->get();
-                            
         return view('manager.dashboard', compact(
-            'totalProducts', 
-            'inventoryValue', 
-            'lowStockCount', 
-            'lowStockItems',
-            'todayActivity', 
-            'recentMovements',
-            'allProducts',
-            'activeShifts'
+            'totalProducts', 'inventoryValue', 'lowStockCount', 'lowStockItems',
+            'toBePacked', 'toBeShipped', 'toBeDelivered', 'toBeInvoiced',
+            'quantityInHand', 'quantityToBeReceived',
+            'activeItems', 'unconfirmedItems',
+            'topSelling', 'poAmountOrdered', 'poRange', 'salesOrdersTable',
+            'recentMovements', 'activeShifts'
         ));
     }
     public function chartData(Request $request)
@@ -96,6 +134,8 @@ class DashboardController extends Controller
             'labels' => $mainData['labels'],
             'received' => $mainData['received'],
             'dispatched' => $mainData['dispatched'],
+            'received_amount' => $mainData['received_amount'],
+            'dispatched_amount' => $mainData['dispatched_amount'],
             'received_exact' => $mainData['received_exact'],
             'dispatched_exact' => $mainData['dispatched_exact']
         ];
@@ -116,13 +156,18 @@ class DashboardController extends Controller
 
     private function getAggregatedData($startDate, $endDate, $grouping)
     {
-        $movements = StockMovement::whereBetween('created_at', [$startDate, $endDate])->get();
+        $movements = StockMovement::with('product')->whereBetween('created_at', [$startDate, $endDate])->get();
         
         $labels = [];
         $receivedData = [];
         $dispatchedData = [];
+        $receivedAmountData = [];
+        $dispatchedAmountData = [];
         $receivedExact = [];
         $dispatchedExact = [];
+
+        $inTypes = ['in', 'purchase_receipt', 'receive'];
+        $outTypes = ['out', 'sales_shipment', 'dispatch'];
 
         if ($grouping === 'hour') {
             $hours = $startDate->diffInHours($endDate) ?: 23;
@@ -131,16 +176,19 @@ class DashboardController extends Controller
                 $labels[] = $time->format('g A');
                 
                 $m = $movements->filter(function($item) use ($time) {
-                    return $item->created_at->format('Y-m-d H') === $time->format('Y-m-d H');
+                    return Carbon::parse($item->created_at)->format('Y-m-d H') === $time->format('Y-m-d H');
                 });
-                $in = $m->where('type', 'in');
-                $out = $m->where('type', 'out');
+                $in = $m->whereIn('type', $inTypes);
+                $out = $m->whereIn('type', $outTypes);
                 
                 $receivedData[] = (int) $in->sum('quantity');
                 $dispatchedData[] = (int) $out->sum('quantity');
                 
-                $rTimes = $in->map(function($i) { return $i->created_at->format('g:i A'); })->unique()->values()->toArray();
-                $dTimes = $out->map(function($i) { return $i->created_at->format('g:i A'); })->unique()->values()->toArray();
+                $receivedAmountData[] = (float) $in->sum(function($item) { return $item->quantity * ($item->product->cost_price ?? $item->product->price ?? 0); });
+                $dispatchedAmountData[] = (float) $out->sum(function($item) { return $item->quantity * ($item->product->price ?? 0); });
+
+                $rTimes = $in->map(function($i) { return Carbon::parse($i->created_at)->format('g:i A'); })->unique()->values()->toArray();
+                $dTimes = $out->map(function($i) { return Carbon::parse($i->created_at)->format('g:i A'); })->unique()->values()->toArray();
                 $receivedExact[] = empty($rTimes) ? null : 'at ' . implode(', ', $rTimes);
                 $dispatchedExact[] = empty($dTimes) ? null : 'at ' . implode(', ', $dTimes);
             }
@@ -151,11 +199,16 @@ class DashboardController extends Controller
                 $labels[] = $date->format('M d');
                 
                 $m = $movements->filter(function($item) use ($date) {
-                    return $item->created_at->format('Y-m-d') === $date->format('Y-m-d');
+                    return Carbon::parse($item->created_at)->format('Y-m-d') === $date->format('Y-m-d');
                 });
+                $in = $m->whereIn('type', $inTypes);
+                $out = $m->whereIn('type', $outTypes);
+
+                $receivedData[] = (int) $in->sum('quantity');
+                $dispatchedData[] = (int) $out->sum('quantity');
+                $receivedAmountData[] = (float) $in->sum(function($item) { return $item->quantity * ($item->product->cost_price ?? $item->product->price ?? 0); });
+                $dispatchedAmountData[] = (float) $out->sum(function($item) { return $item->quantity * ($item->product->price ?? 0); });
                 
-                $receivedData[] = (int) $m->where('type', 'in')->sum('quantity');
-                $dispatchedData[] = (int) $m->where('type', 'out')->sum('quantity');
                 $receivedExact[] = null;
                 $dispatchedExact[] = null;
             }
@@ -169,11 +222,17 @@ class DashboardController extends Controller
                 $labels[] = $startOfWeek->format('M d') . ' - ' . $endOfWeek->format('d');
                 
                 $m = $movements->filter(function($item) use ($startOfWeek, $endOfWeek) {
-                    return $item->created_at >= $startOfWeek && $item->created_at <= $endOfWeek->copy()->endOfDay();
+                    $cDate = Carbon::parse($item->created_at);
+                    return $cDate >= $startOfWeek && $cDate <= $endOfWeek->copy()->endOfDay();
                 });
+                $in = $m->whereIn('type', $inTypes);
+                $out = $m->whereIn('type', $outTypes);
+
+                $receivedData[] = (int) $in->sum('quantity');
+                $dispatchedData[] = (int) $out->sum('quantity');
+                $receivedAmountData[] = (float) $in->sum(function($item) { return $item->quantity * ($item->product->cost_price ?? $item->product->price ?? 0); });
+                $dispatchedAmountData[] = (float) $out->sum(function($item) { return $item->quantity * ($item->product->price ?? 0); });
                 
-                $receivedData[] = (int) $m->where('type', 'in')->sum('quantity');
-                $dispatchedData[] = (int) $m->where('type', 'out')->sum('quantity');
                 $receivedExact[] = null;
                 $dispatchedExact[] = null;
             }
@@ -184,11 +243,16 @@ class DashboardController extends Controller
                 $labels[] = $monthDate->format('M Y');
                 
                 $m = $movements->filter(function($item) use ($monthDate) {
-                    return $item->created_at->format('Y-m') === $monthDate->format('Y-m');
+                    return Carbon::parse($item->created_at)->format('Y-m') === $monthDate->format('Y-m');
                 });
-                
-                $receivedData[] = (int) $m->where('type', 'in')->sum('quantity');
-                $dispatchedData[] = (int) $m->where('type', 'out')->sum('quantity');
+                $in = $m->whereIn('type', $inTypes);
+                $out = $m->whereIn('type', $outTypes);
+
+                $receivedData[] = (int) $in->sum('quantity');
+                $dispatchedData[] = (int) $out->sum('quantity');
+                $receivedAmountData[] = (float) $in->sum(function($item) { return $item->quantity * ($item->product->cost_price ?? $item->product->price ?? 0); });
+                $dispatchedAmountData[] = (float) $out->sum(function($item) { return $item->quantity * ($item->product->price ?? 0); });
+
                 $receivedExact[] = null;
                 $dispatchedExact[] = null;
             }
@@ -198,6 +262,8 @@ class DashboardController extends Controller
             'labels' => $labels,
             'received' => $receivedData,
             'dispatched' => $dispatchedData,
+            'received_amount' => $receivedAmountData,
+            'dispatched_amount' => $dispatchedAmountData,
             'received_exact' => $receivedExact,
             'dispatched_exact' => $dispatchedExact
         ];

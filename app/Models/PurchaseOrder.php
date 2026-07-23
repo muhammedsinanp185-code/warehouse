@@ -8,8 +8,16 @@ class PurchaseOrder extends Model
 {
     protected $fillable = [
         'po_number',
+        'reference_number',
+        'vendor_id',
         'created_by',
         'status',
+        'total_amount',
+        'expected_date',
+        'payment_terms',
+        'delivery_method',
+        'vendor_notes',
+        'terms_conditions',
         'received_at',
         'received_by',
         'notes',
@@ -17,7 +25,13 @@ class PurchaseOrder extends Model
 
     protected $casts = [
         'received_at' => 'datetime',
+        'expected_date' => 'datetime',
     ];
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
+    }
 
     public function items()
     {

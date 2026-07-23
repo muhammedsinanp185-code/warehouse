@@ -10,12 +10,14 @@ class StockMovement extends Model
     use HasFactory;
     
     protected $fillable = [
-        'product_id', 
-        'user_id', 
-        'type', 
+        'product_id',
+        'user_id',
+        'type', // purchase_receipt, sales_shipment, adjustment, transfer
         'quantity',
-        'reference_party',
-        'balance_after'
+        'document_type',
+        'document_id',
+        'balance_after',
+        'reason'
     ];
     
     public function product()
@@ -26,5 +28,10 @@ class StockMovement extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function document()
+    {
+        return $this->morphTo();
     }
 }
